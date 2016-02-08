@@ -270,7 +270,7 @@ endfunction
 
 
 function! s:OnMatchedCloseParen(result)
-    let l:opener s:Peek(a:result.parenStack)
+    let l:opener = s:Peek(a:result.parenStack)
     let a:result.parenTrailEndX = a:result.x + 1
     call add(a:result.parenTrailOpeners, l:opener)
     let a:result.maxIndent = l:opener.x
@@ -336,7 +336,7 @@ endfunction
 
 
 function! s:AfterBackslash(result)
-    let a:result:isEscaping = 0
+    let a:result.isEscaping = 0
 
     if a:result.ch ==# s:NEWLINE
         if a:result.isInCode
@@ -560,8 +560,8 @@ function! s:CorrectIndent(result)
     let l:minIndent = 0
     let l:maxIndent = a:result.maxIndent
 
-    let l:opener = s:Peek(a:result.parenStack)
-    if l:opener != s:SENTINEL_NULL
+    if len(a:result.parenStack) != 0
+        let l:opener = s:Peek(a:result.parenStack)
         let l:minIndent = l:opener.x + 1
         let l:newIndent = l:newIndent + l:opener.indentDelta
     endif
