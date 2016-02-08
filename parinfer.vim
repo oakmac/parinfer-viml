@@ -412,7 +412,7 @@ endfunction
 ""------------------------------------------------------------------------------
 
 
-function! s:UpdateParenTrainBounds(result)
+function! s:UpdateParenTrailBounds(result)
     let l:line = a:result.lines[a:result.lineNo]
     let l:prevCh = s:SENTINEL_NULL
     if a:result.x > 0
@@ -537,7 +537,6 @@ function! s:AppendParenTrail(result)
     let a:result.parenTrailEndX = a:result.parenTrailEndX + 1
 endfunction
 
-
 function! s:FinishNewParenTrail(result)
     if a:result.mode ==# s:INDENT_MODE
         s:ClampParenTrailToCursor(a:result)
@@ -553,13 +552,169 @@ endfunction
 "" Indentation functions
 ""------------------------------------------------------------------------------
 
-"" TODO: write this section
+function! s:CorrectIndent(result)
+    let l:origIndent = a:result.x
+    let l:newIndent = l:origIndent
+    let l:minIndent = 0
+    let l:maxIndent = a:result.maxIndent
+
+    let l:opener = s:Peek(a:result.parenStack)
+    if l:opener != s:SENTINEL_NULL
+        let l:minIndent = l:opener.x + 1
+        let l:newIndent = l:newIndent + l:opener.indentDelta
+    endif
+
+    let l:newIndent = s:Clamp(l:newIndent, l:minIndent, l:maxIndent)
+
+    if l:newIndent != l:origIndent
+        let l:indentStr = s:RepeatString(s:BLANK_SPACE, l:newIndent)
+        s:ReplaceWithinLine(a:result, a:result.lineNo, 0, l:origIndent, l:indentStr)
+        let a:result.x = l:newIndent
+        let a:result.indentDelta = a:result.indentDelta + l:newIndent - l:origIndent
+    endif
+endfunction
+
+
+function! s:OnProperIndent(result)
+    let a:result.trackingIndent = 0
+
+    if a:result.quoteDanger
+        "" TODO: figure out throw
+        "" throw error(result, ERROR_QUOTE_DANGER, SENTINEL_NULL, SENTINEL_NULL);
+    endif
+
+    if a:result.mode ==# s:INDENT_MODE
+        s:CorrectParenTrail(a:result, a:result.x)
+    elseif a:result.mode ==# s:PAREN_MODE
+        s:CorrectIndent(a:result)
+    endif
+endfunction
+
+
+function! s:OnLeadingCloseParen(result)
+    let a:result.skipChar = 1
+    let a:result.trackingIndent = 1
+
+    if a:result.mode ==# s:PAREN_MODE
+        if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
+            if s:IsCursorOnLeft(a:result)
+                let a:result.skipChar = 0
+                s:OnProperIndent(a:result)
+            else
+                s:AppendParenTrail(a:result)
+            endif
+        endif
+    endif
+endfunction
+
+
+function! s:OnIndent(result)
+    if s:IsCloseParen(a:result.ch)
+        s:OnLeadingCloseParen(a:result)
+    elseif a:result.ch ==# s:SEMICOLON
+        let a:result.trackingIndent = 0
+    elseif a:result.ch !=# s:NEWLINE
+        s:OnProperIndent(a:result)
+    endif
+endfunction
+
 
 ""------------------------------------------------------------------------------
 "" High-level processing functions
 ""------------------------------------------------------------------------------
 
-"" TODO: write this section
+function! s:ProcessChar(result, ch)
+    let l:origCh = a:ch
+
+    let a:result.ch = a:ch
+    let a:result.skipChar = 0
+
+    if a:result.mode ==# s:PAREN_MODE
+        s:HandleCursorDelta(a:result)
+    endif
+
+    if a:result.trackingIndent && a:ch !=# s:BLANK_SPACE && a:ch !=# s:TAB
+        s:OnIndent(a:result)
+    endif
+
+    if a:result.skipChar
+        let a:result.ch = ''
+    else
+        s:OnChar(a:result)
+        s:UpdateParenTrailBounds(a:result)
+    endif
+
+    s:CommitChar(a:result, l:origCh)
+endfunction
+
+
+function! s:ProcessLine(result, line)
+    s:InitLine(a:result, a:line)
+
+    if a:result.mode ==# s:INDENT_MODE
+        let a:result.trackingIndent = len(a:result.parenStack) != 0 &&
+                                    \ ! a:result.isInStr
+    elseif a:result.mode ==# s:PAREN_MODE
+        let a:result.trackingIndent = ! a:result.isInStr
+    endif
+
+    let l:i = 0
+    let l:chars = a:line . s:NEWLINE
+    while l:i < strlen(l:chars)
+        s:ProcessChar(a:result, l:chars[l:i])
+        let l:i = l:i + 1
+    endwhile
+
+    if a:result.lineNo == a:result.parenTrailLineNo
+        s:FinishNewParenTrail(a:result)
+    endif
+endfunction
+
+
+function! s:FinalizeResult(result)
+    if a:result.quoteDanger
+        "" TODO: figure out throw here
+        "" throw error(result, ERROR_QUOTE_DANGER, SENTINEL_NULL, SENTINEL_NULL)
+    endif
+
+    if a:result.isInStr
+        "" TODO: figure out throw here
+        "" throw error(result, ERROR_UNCLOSED_QUOTE, SENTINEL_NULL, SENTINEL_NULL)
+    endif
+
+    if len(a:result.parenStack) != 0
+        if a:result.mode ==# s:PAREN_MODE
+            let l:opener = s:Peek(a:result.parenStack)
+            "" TODO: figure out throw here
+            "" throw error(result, ERROR_UNCLOSED_PAREN, opener.lineNo, opener.x);
+        elseif a:result.mode ==# s:INDENT_MODE
+            s:CorrectParenTrail(a:result, 0)
+        endif
+    endif
+    let a:result.success = 1
+endfunction
+
+
+function! s:ProcessError(result, err)
+    let a:result.success = 0
+    let a:result.error = a:err
+endfunction
+
+
+function! s:ProcessText(text, mode, options)
+    let l:result = s:CreateInitialResult(a:text, a:mode, a:options)
+
+    "" TODO: figure out try here
+    let l:i = 0
+    while l:i < len(l:result.origLines)
+        s:ProcessLine(l:result, l:result.origLines[l:i])
+        let l:i = l:i + 1
+    endwhile
+    s:FinalizeResult(l:result)
+    "" TODO: catch here
+
+    return l:result
+endfunction
 
 ""------------------------------------------------------------------------------
 "" Public API
