@@ -50,45 +50,47 @@ endfunction
 ""------------------------------------------------------------------------------
 
 function! s:CreateInitialResult(text, mode, options)
-    return {
-      \ 'mode': a:mode,
+    let l:result = {}
 
-      \ 'origText': a:text,
-      \ 'origLines': split(a:text, s:NEWLINE),
+    let l:result.mode = a:mode
 
-      \ 'lines': [],
-      \ 'lineNo': -1,
-      \ 'ch': '',
-      \ 'x': 0,
+    let l:result.origText = a:text
+    let l:result.origLines = split(a:text, s:NEWLINE)
 
-      \ 'parenStack': [],
+    let l:result.lines = []
+    let l:result.lineNo = -1
+    let l:result.ch = ''
+    let l:result.x = 0
 
-      \ 'parenTrailLineNo': s:SENTINEL_NULL,
-      \ 'parenTrailStartX': s:SENTINEL_NULL,
-      \ 'parenTrailEndX': s:SENTINEL_NULL,
-      \ 'parenTrailOpeners': [],
+    let l:result.parenStack = []
 
-      \ 'cursorX': s:SENTINEL_NULL,
-      \ 'cursorLine': s:SENTINEL_NULL,
-      \ 'cursorDx': s:SENTINEL_NULL,
+    let l:result.parenTrailLineNo = s:SENTINEL_NULL
+    let l:result.parenTrailStartX = s:SENTINEL_NULL
+    let l:result.parenTrailEndX = s:SENTINEL_NULL
+    let l:result.parenTrailOpeners = []
 
-      \ 'isInCode': 1,
-      \ 'isEscaping': 0,
-      \ 'isInStr': 0,
-      \ 'isInComment': 0,
-      \ 'commentX': s:SENTINEL_NULL,
+    let l:result.cursorX = s:SENTINEL_NULL
+    let l:result.cursorLine = s:SENTINEL_NULL
+    let l:result.cursorDx = s:SENTINEL_NULL
 
-      \ 'quoteDanger': 0,
-      \ 'trackingIndent': 0,
-      \ 'skipChar': 0,
-      \ 'success': 0,
+    let l:result.isInCode = 1
+    let l:result.isEscaping = 0
+    let l:result.isInStr = 0
+    let l:result.isInComment = 0
+    let l:result.commentX = s:SENTINEL_NULL
 
-      \ 'maxIndent': s:SENTINEL_NULL,
-      \ 'indentDelta': 0,
+    let l:result.quoteDanger = 0
+    let l:result.trackingIndent = 0
+    let l:result.skipChar = 0
+    let l:result.success = 0
 
-      \ 'error': s:SENTINEL_NULL,
-      \ 'errorPosCache': {},
-      \ }
+    let l:result.maxIndent = s:SENTINEL_NULL
+    let l:result.indentDelta = 0
+
+    let l:result.error = s:SENTINEL_NULL
+    let l:result.errorPosCache = {}
+
+    return l:result
 endfunction
 
 ""------------------------------------------------------------------------------
@@ -257,12 +259,11 @@ endfunction
 
 function! s:OnOpenParen(result)
     if a:result.isInCode
-        let l:newStackEl = {
-          \ 'lineNo': a:result.lineNo,
-          \ 'x': a:result.x,
-          \ 'ch': a:result.ch,
-          \ 'indentDelta': a:result.indentDelta,
-          \ }
+        let l:newStackEl = {}
+        let l:newStackEl.lineNo = a:result.lineNo
+        let l:newStackEl.x = a:result.x
+        let l:newStackEl.ch = a:result.ch
+        let l:newStackEl.indentDelta = a:result.indentDelta
         add(a:result.parenStack, l:newStackEl)
     endif
 endfunction
@@ -707,7 +708,7 @@ function! s:ProcessText(text, mode, options)
     "" TODO: figure out try here
     let l:i = 0
     while l:i < len(l:result.origLines)
-        s:ProcessLine(l:result, l:result.origLines[l:i])
+        s:ProcessLine(l:result, get(l:result.origLines, l:i))
         let l:i = l:i + 1
     endwhile
     s:FinalizeResult(l:result)
@@ -718,16 +719,17 @@ endfunction
 
 function! s:PublicResult(result)
     if ! a:result.success
-        return {
-          \ 'success': 0,
-          \ 'text': a:result.origText,
-          \ 'error': a:result.error,
-          \ }
+        let l:result = {}
+        let l:result.success = 0
+        let l:result.text = a:result.origText
+        let l:result.error = a:result.error
+        return l:result
     endif
-    return {
-      \ 'success': 1,
-      \ 'text': join(a:result.lines, s:NEWLINE),
-      \ }
+
+    let l:result = {}
+    let l:result.success = 1
+    let l:result.text = join(a:result.lines, s:NEWLINE)
+    return l:result
 endfunction
 
 ""------------------------------------------------------------------------------
