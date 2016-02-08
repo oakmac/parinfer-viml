@@ -716,8 +716,33 @@ function! s:ProcessText(text, mode, options)
     return l:result
 endfunction
 
+function! s:PublicResult(result)
+    if ! a:result.success
+        return {
+          \ 'success': 0,
+          \ 'text': a:result.origText,
+          \ 'error': a:result.error,
+          \ }
+    endif
+    return {
+      \ 'success': 1,
+      \ 'text': join(a:result.lines, s:NEWLINE),
+      \ }
+endfunction
+
 ""------------------------------------------------------------------------------
 "" Public API
 ""------------------------------------------------------------------------------
 
-"" TODO: write this section
+let s:PublicAPI = {}
+let g:ParinferLib = s:PublicAPI
+
+function! s:PublicAPI.IndentMode(text, options)
+    let l:result = s:ProcessText(a:text, s:INDENT_MODE, a:options)
+    return s:PublicResult(l:result)
+endfunction
+
+function! s:PublicAPI.ParenMode(text, options)
+    let l:result = s:ProcessText(a:text, s:PAREN_MODE, a:options)
+    return s:PublicResult(l:result)
+endfunction
