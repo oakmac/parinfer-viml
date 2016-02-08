@@ -195,6 +195,15 @@ endfunction
 "" Misc Util
 ""------------------------------------------------------------------------------
 
+"" NOTE: this should be a variadic function, but for Parinfer's purposes it only
+""       needs to be two arity
+function! s:Max(x, y)
+    if a:y > a:x
+        return a:y
+    endif
+    return a:x
+endfunction
+
 
 function! s:Clamp(valN, minN, maxN)
     let l:returnVal = a:valN
@@ -224,6 +233,7 @@ endfunction
 
 "" removes the last item from a list
 "" if the list is already empty, does nothing
+"" returns the modified (or empty) array
 function! s:Pop(arr)
     if len(a:arr) == 0
         return []
@@ -365,13 +375,179 @@ endfunction
 "" Cursor functions
 ""------------------------------------------------------------------------------
 
-"" TODO: write this section
+
+function! s:IsCursorOnLeft(result)
+    return a:result.lineNo == a:result.cursorLine &&
+         \ a:result.cursorX != s:SENTINEL_NULL &&
+         \ a:result.cursorX <= a:result.x
+endfunction
+
+
+function! s:IsCursorOnRight(result, x)
+    return a:result.lineNo == a:result.cursorLine &&
+         \ a:result.cursorX != s:SENTINEL_NULL &&
+         \ a:x != s:SENTINEL_NULL &&
+         \ a:result.cursorX > a:x
+endfunction
+
+
+function! s:IsCursorInComment(result)
+    return s:IsCursorOnRight(a:result, a:result.commentX)
+endfunction
+
+
+function! s:HandleCursorDelta(result)
+    let l:hasCursorDelta = a:result.cursorDx != s:SENTINEL_NULL &&
+                         \ a:result.cursorLine == a:result.lineNo &&
+                         \ a:result.cursorX == a:result.x
+
+    if l:hasCursorDelta
+        let a:result.indentDelta = a:result.indentDelta + a:result.cursorDx
+    endif
+endfunction
+
 
 ""------------------------------------------------------------------------------
 "" Paren Trail functions
 ""------------------------------------------------------------------------------
 
-"" TODO: write this section
+
+function! s:UpdateParenTrainBounds(result)
+    let l:line = a:result.lines[a:result.lineNo]
+    let l:prevCh = s:SENTINEL_NULL
+    if a:result.x > 0
+        let l:prevCh = l:line[a:result.x - 1]
+    endif
+    let l:ch = a:result.ch
+
+    let l:shouldReset = a:result.isInCode &&
+                      \ ! s:IsCloseParen(l:ch) &&
+                      \ l:ch !=# '' &&
+                      \ (l:ch !=# s:BLANK_SPACE || l:prevCh ==# s:BACKSLASH) &&
+                      \ l:ch !=# s:DOUBLE_SPACE
+
+    if l:shouldReset
+        let a:result.parenTrailLineNo = a:result.lineNo
+        let a:result.parenTrailStartX = a:result.x + 1
+        let a:result.parenTrailEndX = a:result.x + 1
+        let a:result.parenTrailOpeners = []
+        let a:result.maxIndent = s:SENTINEL_NULL
+    endif
+endfunction
+
+
+function! s:ClampParenTrailToCursor(result)
+    let l:startX = a:result.parenTrailStartX
+    let l:endX = a:result.parenTrailEndX
+
+    let l:isCursorClamping = s:IsCursorOnRight(a:result, l:startX) &&
+                           \ ! s:IsCursorInComment(a:result)
+
+    if l:isCursorClamping
+        let l:newStartX = s:Max(l:startX, a:result.cursorX)
+        let l:newEndX = s:Max(l:endX, a:result.cursorX)
+
+        let l:line = a:result.lines[a:result.lineNo]
+        let l:removeCount = 0
+        let l:i = l:startX
+        while l:i < l:newStartX
+            if s:IsCloseParen(l:line[l:i])
+                let l:removeCount = l:removeCount + 1
+            endif
+            let l:i = l:i + 1
+        endwhile
+
+        if l:removeCount > 0
+            let a:result.parenTrailOpeners = a:result.parenTrailOpeners[l:removeCount : ]
+        endif
+        let a:result.parenTrailStartX = l:newStartX
+        let a:result.parenTrailEndX = l:newEndX
+    endif
+endfunction
+
+
+function! s:RemoveParenTrail(result)
+    let l:startX = a:result.parenTrailStartX
+    let l:endX = a:result.parenTrailEndX
+
+    if l:startX == l:endX
+        return
+    endif
+
+    let l:openers = a:result.parenTrailOpeners
+    let a:result.parenStack = a:result.parenStack + reverse(l:openers)
+    let a:result.parenTrailOpeners = []
+
+    s:RemoveWithinLine(a:result, a:result.lineNo, l:startX, l:endX)
+endfunction
+
+
+function! s:CorrectParenTrail(result, indentX)
+    let l:parens = ''
+
+    while len(a:result.parenStack) > 0
+        let l:opener = s:Peek(a:result.parenStack)
+        if l:opener.x >= a:indentX
+            let a:result.parenStack = s:Pop(a:result.parenStack)
+            let l:parens = l:parens . s:PARENS[l:opener.ch]
+        else
+            break
+        endif
+    endwhile
+
+    s:InsertWithinLine(a:result, a:result.parenTrailLineNo, a:result.parenTrailStartX, l:parens)
+endfunction
+
+
+function! s:CleanParenTrail(result)
+    let l:startX = a:result.parenTrailStartX
+    let l:endX = a:result.parenTrailEndX
+
+    if l:startX == l:endX || a:result.lineNo != a:result.parenTrailLineNo
+        return
+    endif
+
+    let l:line = a:result.lines[a:result.lineNo]
+    let l:newTrail = ''
+    let l:spaceCount = 0
+    let l:i = l:startX
+    while l:i < l:endX
+        if s:IsCloseParen(l:line[l:i])
+            let l:newTrail = l:newTrail . l:line[l:i]
+        else
+            let l:spaceCount = l:spaceCount + 1
+        endif
+        let l:i = l:i + 1
+    endwhile
+
+    if l:spaceCount > 0
+        s:ReplaceWithinLine(a:result, a:result.lineNo, l:startX, l:endX, l:newTrail)
+        let a:result.parenTrailEndX = a:result.parenTrailEndX - l:spaceCount
+    endif
+endfunction
+
+
+function! s:AppendParenTrail(result)
+    let l:opener = a:result.parenStack[-1]
+    let a:result.parenStack = s:Pop(a:result.parenStack)
+    let l:closeCh = s:PARENS[l:opener.ch]
+
+    let a:result.maxIndent = l:opener.x
+    s:InsertWithinLine(a:result, a:result.parenTrailLineNo, a:result.parenTrailEndX, l:closeCh)
+    let a:result.parenTrailEndX = a:result.parenTrailEndX + 1
+endfunction
+
+
+function! s:FinishNewParenTrail(result)
+    if a:result.mode ==# s:INDENT_MODE
+        s:ClampParenTrailToCursor(a:result)
+        s:RemoveParenTrail(a:result)
+    elseif a:result.mode ==# s:PAREN_MODE
+        if a:result.lineNo != a:result.cursorLine
+            s:CleanParenTrail(a:result)
+        endif
+    endif
+endfunction
 
 ""------------------------------------------------------------------------------
 "" Indentation functions
