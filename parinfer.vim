@@ -176,7 +176,7 @@ endfunction
 function! s:InitLine(result, line)
     let a:result.x = 0
     let a:result.lineNo = a:result.lineNo + 1
-    add(a:result.lines, line)
+    call add(a:result.lines, a:line)
 
     "" reset line-specific state
     let a:result.commentX = s:SENTINEL_NULL
@@ -187,7 +187,7 @@ endfunction
 function! s:CommitChar(result, origCh)
     let l:ch = a:result.ch
     if a:origCh !=# l:ch
-        s:ReplaceWithinLine(a:result, a:result.lineNo, a:result.x, a:result.x + strlen(a:origCh), l:ch)
+        call s:ReplaceWithinLine(a:result, a:result.lineNo, a:result.x, a:result.x + strlen(a:origCh), l:ch)
     endif
     let a:result.x = a:result.x + strlen(l:ch)
 endfunction
@@ -264,7 +264,7 @@ function! s:OnOpenParen(result)
         let l:newStackEl.x = a:result.x
         let l:newStackEl.ch = a:result.ch
         let l:newStackEl.indentDelta = a:result.indentDelta
-        add(a:result.parenStack, l:newStackEl)
+        call add(a:result.parenStack, l:newStackEl)
     endif
 endfunction
 
@@ -272,7 +272,7 @@ endfunction
 function! s:OnMatchedCloseParen(result)
     let l:opener s:Peek(a:result.parenStack)
     let a:result.parenTrailEndX = a:result.x + 1
-    add(a:result.parenTrailOpeners, l:opener)
+    call add(a:result.parenTrailOpeners, l:opener)
     let a:result.maxIndent = l:opener.x
     let a:result.parenStack = s:Pop(a:result.parenStack)
 endfunction
@@ -286,9 +286,9 @@ endfunction
 function! s:OnCloseParen(result)
     if a:result.isInCode
         if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
-            s:OnMatchedCloseParen(a:result)
+            call s:OnMatchedCloseParen(a:result)
         else
-            s:OnUnmatchedCloseParen(a:result)
+            call s:OnUnmatchedCloseParen(a:result)
         endif
     endif
 endfunction
@@ -321,11 +321,11 @@ function! s:OnQuote(result)
     elseif a:result.isInComment
         let a:result.quoteDanger = ! a:result.quoteDanger
         if a:result.quoteDanger
-            s:CacheErrorPos(a:result, s:ERROR_QUOTE_DANGER, a:result.lineNo, a:result.x)
+            call s:CacheErrorPos(a:result, s:ERROR_QUOTE_DANGER, a:result.lineNo, a:result.x)
         endif
     else
         let a:result.isInStr = 1
-        s:CacheErrorPos(a:result, s:ERROR_UNCLOSED_QUOTE, a:result.lineNo, a:result.x)
+        call s:CacheErrorPos(a:result, s:ERROR_UNCLOSED_QUOTE, a:result.lineNo, a:result.x)
     endif
 endfunction
 
@@ -343,7 +343,7 @@ function! s:AfterBackslash(result)
             "" TODO: figure out throw here
             "" throw error(result, ERROR_EOL_BACKSLASH, result.lineNo, result.x - 1);
         endif
-        s:OnNewline(a:result)
+        call s:OnNewline(a:result)
     endif
 endfunction
 
@@ -351,21 +351,21 @@ endfunction
 function! s:OnChar(result)
     let l:ch = a:result.ch
     if a:result.isEscaping
-        s:AfterBackslash(a:result)
+        call s:AfterBackslash(a:result)
     elseif s:IsOpenParen(l:ch)
-        s:OnOpenParen(a:result)
+        call s:OnOpenParen(a:result)
     elseif s:IsCloseParen(l:ch)
-        s:OnCloseParen(a:result)
+        call s:OnCloseParen(a:result)
     elseif l:ch ==# s:DOUBLE_QUOTE
-        s:OnQuote(a:result)
+        call s:OnQuote(a:result)
     elseif l:ch ==# s:SEMICOLON
-        s:OnSemicolon(a:result)
+        call s:OnSemicolon(a:result)
     elseif l:ch ==# s:BACKSLASH
-        s:OnBackslash(a:result)
+        call s:OnBackslash(a:result)
     elseif l:ch ==# s:TAB
-        s:OnTab(a:result)
+        call s:OnTab(a:result)
     elseif l:ch ==# s:NEWLINE
-        s:OnNewline(a:result)
+        call s:OnNewline(a:result)
     endif
 
     let a:result.isInCode = (! a:result.isInComment) && (! a:result.isInStr)
@@ -479,7 +479,7 @@ function! s:RemoveParenTrail(result)
     let a:result.parenStack = a:result.parenStack + reverse(l:openers)
     let a:result.parenTrailOpeners = []
 
-    s:RemoveWithinLine(a:result, a:result.lineNo, l:startX, l:endX)
+    call s:RemoveWithinLine(a:result, a:result.lineNo, l:startX, l:endX)
 endfunction
 
 
@@ -496,7 +496,7 @@ function! s:CorrectParenTrail(result, indentX)
         endif
     endwhile
 
-    s:InsertWithinLine(a:result, a:result.parenTrailLineNo, a:result.parenTrailStartX, l:parens)
+    call s:InsertWithinLine(a:result, a:result.parenTrailLineNo, a:result.parenTrailStartX, l:parens)
 endfunction
 
 
@@ -522,7 +522,7 @@ function! s:CleanParenTrail(result)
     endwhile
 
     if l:spaceCount > 0
-        s:ReplaceWithinLine(a:result, a:result.lineNo, l:startX, l:endX, l:newTrail)
+        call s:ReplaceWithinLine(a:result, a:result.lineNo, l:startX, l:endX, l:newTrail)
         let a:result.parenTrailEndX = a:result.parenTrailEndX - l:spaceCount
     endif
 endfunction
@@ -534,17 +534,18 @@ function! s:AppendParenTrail(result)
     let l:closeCh = s:PARENS[l:opener.ch]
 
     let a:result.maxIndent = l:opener.x
-    s:InsertWithinLine(a:result, a:result.parenTrailLineNo, a:result.parenTrailEndX, l:closeCh)
+    call s:InsertWithinLine(a:result, a:result.parenTrailLineNo, a:result.parenTrailEndX, l:closeCh)
     let a:result.parenTrailEndX = a:result.parenTrailEndX + 1
 endfunction
 
+
 function! s:FinishNewParenTrail(result)
     if a:result.mode ==# s:INDENT_MODE
-        s:ClampParenTrailToCursor(a:result)
-        s:RemoveParenTrail(a:result)
+        call s:ClampParenTrailToCursor(a:result)
+        call s:RemoveParenTrail(a:result)
     elseif a:result.mode ==# s:PAREN_MODE
         if a:result.lineNo != a:result.cursorLine
-            s:CleanParenTrail(a:result)
+            call s:CleanParenTrail(a:result)
         endif
     endif
 endfunction
@@ -569,7 +570,7 @@ function! s:CorrectIndent(result)
 
     if l:newIndent != l:origIndent
         let l:indentStr = s:RepeatString(s:BLANK_SPACE, l:newIndent)
-        s:ReplaceWithinLine(a:result, a:result.lineNo, 0, l:origIndent, l:indentStr)
+        call s:ReplaceWithinLine(a:result, a:result.lineNo, 0, l:origIndent, l:indentStr)
         let a:result.x = l:newIndent
         let a:result.indentDelta = a:result.indentDelta + l:newIndent - l:origIndent
     endif
@@ -585,9 +586,9 @@ function! s:OnProperIndent(result)
     endif
 
     if a:result.mode ==# s:INDENT_MODE
-        s:CorrectParenTrail(a:result, a:result.x)
+        call s:CorrectParenTrail(a:result, a:result.x)
     elseif a:result.mode ==# s:PAREN_MODE
-        s:CorrectIndent(a:result)
+        call s:CorrectIndent(a:result)
     endif
 endfunction
 
@@ -600,9 +601,9 @@ function! s:OnLeadingCloseParen(result)
         if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
             if s:IsCursorOnLeft(a:result)
                 let a:result.skipChar = 0
-                s:OnProperIndent(a:result)
+                call s:OnProperIndent(a:result)
             else
-                s:AppendParenTrail(a:result)
+                call s:AppendParenTrail(a:result)
             endif
         endif
     endif
@@ -611,11 +612,11 @@ endfunction
 
 function! s:OnIndent(result)
     if s:IsCloseParen(a:result.ch)
-        s:OnLeadingCloseParen(a:result)
+        call s:OnLeadingCloseParen(a:result)
     elseif a:result.ch ==# s:SEMICOLON
         let a:result.trackingIndent = 0
     elseif a:result.ch !=# s:NEWLINE
-        s:OnProperIndent(a:result)
+        call s:OnProperIndent(a:result)
     endif
 endfunction
 
@@ -631,26 +632,26 @@ function! s:ProcessChar(result, ch)
     let a:result.skipChar = 0
 
     if a:result.mode ==# s:PAREN_MODE
-        s:HandleCursorDelta(a:result)
+        call s:HandleCursorDelta(a:result)
     endif
 
     if a:result.trackingIndent && a:ch !=# s:BLANK_SPACE && a:ch !=# s:TAB
-        s:OnIndent(a:result)
+        call s:OnIndent(a:result)
     endif
 
     if a:result.skipChar
         let a:result.ch = ''
     else
-        s:OnChar(a:result)
-        s:UpdateParenTrailBounds(a:result)
+        call s:OnChar(a:result)
+        call s:UpdateParenTrailBounds(a:result)
     endif
 
-    s:CommitChar(a:result, l:origCh)
+    call s:CommitChar(a:result, l:origCh)
 endfunction
 
 
 function! s:ProcessLine(result, line)
-    s:InitLine(a:result, a:line)
+    call s:InitLine(a:result, a:line)
 
     if a:result.mode ==# s:INDENT_MODE
         let a:result.trackingIndent = len(a:result.parenStack) != 0 &&
@@ -662,12 +663,12 @@ function! s:ProcessLine(result, line)
     let l:i = 0
     let l:chars = a:line . s:NEWLINE
     while l:i < strlen(l:chars)
-        s:ProcessChar(a:result, l:chars[l:i])
+        call s:ProcessChar(a:result, l:chars[l:i])
         let l:i = l:i + 1
     endwhile
 
     if a:result.lineNo == a:result.parenTrailLineNo
-        s:FinishNewParenTrail(a:result)
+        call s:FinishNewParenTrail(a:result)
     endif
 endfunction
 
@@ -689,7 +690,7 @@ function! s:FinalizeResult(result)
             "" TODO: figure out throw here
             "" throw error(result, ERROR_UNCLOSED_PAREN, opener.lineNo, opener.x);
         elseif a:result.mode ==# s:INDENT_MODE
-            s:CorrectParenTrail(a:result, 0)
+            call s:CorrectParenTrail(a:result, 0)
         endif
     endif
     let a:result.success = 1
@@ -708,10 +709,10 @@ function! s:ProcessText(text, mode, options)
     "" TODO: figure out try here
     let l:i = 0
     while l:i < len(l:result.origLines)
-        s:ProcessLine(l:result, get(l:result.origLines, l:i))
+        call s:ProcessLine(l:result, get(l:result.origLines, l:i))
         let l:i = l:i + 1
     endwhile
-    s:FinalizeResult(l:result)
+    call s:FinalizeResult(l:result)
     "" TODO: catch here
 
     return l:result
