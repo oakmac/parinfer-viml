@@ -15,8 +15,8 @@ This is basically a 1-to-1 port of [parinfer.js].
 The `.json` files in the [tests] folder are copied directly from the [main
 Parinfer repo].
 
-This is my first Vim script project. There is likely lots of room for
-improvement in this implementation. PR's welcome :)
+This is my first Vimscript project. There is likely lots of room for improvement
+in this implementation. PR's welcome :)
 
 ## Usage
 

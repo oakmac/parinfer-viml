@@ -1,10 +1,8 @@
 // This file builds "tests.vim", which runs the Parinfer tests using Vimscript.
 
 const fs = require('fs');
-
 const indentModeTests = require('./tests/indent-mode.json');
 const parenModeTests = require('./tests/paren-mode.json');
-
 const warningLine = '""!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n';
 const squigglyLine = '""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n';
 
@@ -44,9 +42,9 @@ output += squigglyLine +
 
 fs.writeFileSync('tests.vim', output, {encoding: 'utf8'});
 
-
-// TODO: check idempotence
-// TODO: check cross-mode preservation
+//------------------------------------------------------------------------------
+// Functions
+//------------------------------------------------------------------------------
 
 function writeTestCase(test, mode) {
   var indentModeFn = 'g:ParinferLib.IndentMode';

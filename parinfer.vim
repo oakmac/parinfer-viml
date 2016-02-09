@@ -1,5 +1,5 @@
 "" parinfer.vim - a Parinfer implementation in Vimscript
-"" v0.1.0+dev
+"" v0.1.0
 "" https://github.com/oakmac/parinfer-viml
 ""
 "" More information about Parinfer can be found here:
@@ -53,7 +53,7 @@ function! s:CreateInitialResult(text, mode, options)
     let l:result.mode = a:mode
 
     let l:result.origText = a:text
-    let l:result.origLines = split(a:text, s:NEWLINE)
+    let l:result.origLines = split(a:text, s:NEWLINE, 1)
 
     let l:result.lines = []
     let l:result.lineNo = -1
