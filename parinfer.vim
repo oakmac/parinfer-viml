@@ -5,7 +5,7 @@
 "" More information about Parinfer can be found here:
 "" http://shaunlebron.github.io/parinfer/
 ""
-"" Copyright (c) 2015, Chris Oakman and other contributors
+"" Copyright (c) 2016, Chris Oakman
 "" Released under the ISC license
 "" https://github.com/oakmac/parinfer-viml/blob/master/LICENSE.md
 
