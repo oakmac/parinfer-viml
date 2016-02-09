@@ -8,6 +8,7 @@
 ""!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 source parinfer.vim
+let s:anyErrorsFound = 0
 
 ""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 "" Indent Mode Tests
@@ -16,6 +17,7 @@ source parinfer.vim
 let s:result = g:ParinferLib.IndentMode("(defn foo\n  [arg\n  ret", {})
 let s:expectedText = "(defn foo\n  [arg]\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 6 failed"
 endif
 
@@ -23,6 +25,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(defn foo\n  [arg\n   ret", {})
 let s:expectedText = "(defn foo\n  [arg\n   ret])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 20 failed"
 endif
 
@@ -30,6 +33,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(defn foo\n[arg\n   ret", {})
 let s:expectedText = "(defn foo)\n[arg\n   ret]"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 34 failed"
 endif
 
@@ -37,6 +41,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(defn foo\n[arg\nret", {})
 let s:expectedText = "(defn foo)\n[arg]\nret"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 48 failed"
 endif
 
@@ -44,6 +49,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(defn foo\n  [arg\n  ret\n\n(defn foo\n  [arg\n  ret", {})
 let s:expectedText = "(defn foo\n  [arg]\n  ret)\n\n(defn foo\n  [arg]\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 62 failed"
 endif
 
@@ -51,6 +57,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(def foo [a b]]", {})
 let s:expectedText = "(def foo [a b])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 86 failed"
 endif
 
@@ -58,6 +65,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [x {:foo 1 :bar 2]\n  x)", {})
 let s:expectedText = "(let [x {:foo 1 :bar 2}]\n  x)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 96 failed"
 endif
 
@@ -65,6 +73,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(def foo \"as", {})
 let s:expectedText = "(def foo \"as"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 110 failed"
 endif
 
@@ -72,6 +81,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(defn foo [a \"])", {})
 let s:expectedText = "(defn foo [a \"])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 120 failed"
 endif
 
@@ -79,6 +89,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(defn foo\n  \"This is docstring.\n  Line 2 here.\"\n  ret", {})
 let s:expectedText = "(defn foo\n  \"This is docstring.\n  Line 2 here.\"\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 130 failed"
 endif
 
@@ -86,6 +97,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [a \"Hello\nWorld\"\n      b 2\n  ret", {})
 let s:expectedText = "(let [a \"Hello\nWorld\"\n      b 2]\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 146 failed"
 endif
 
@@ -93,34 +105,39 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [a \"])\"\n      b 2", {})
 let s:expectedText = "(let [a \"])\"\n      b 2])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 162 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def foo \"\\"\"", {})
-let s:expectedText = "(def foo \"\\"\")"
+let s:result = g:ParinferLib.IndentMode("(def foo \"\\\"\"", {})
+let s:expectedText = "(def foo \"\\\"\")"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 174 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("\"\"]\"", {})
+let s:result = g:ParinferLib.IndentMode("\"\"]\"", {'cursorX':1,'cursorLine':0,})
 let s:expectedText = "\"\"]\""
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 191 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def foo\n  \"\n  \"(a b)\n      c\")", {})
+let s:result = g:ParinferLib.IndentMode("(def foo\n  \"\n  \"(a b)\n      c\")", {'cursorX':3,'cursorLine':1,})
 let s:expectedText = "(def foo\n  \"\n  \"(a b)\n      c\")"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 201 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(for [col columns]\n  \"\n  [:div.td {:style \"max-width: 500px;\"}])", {})
+let s:result = g:ParinferLib.IndentMode("(for [col columns]\n  \"\n  [:div.td {:style \"max-width: 500px;\"}])", {'cursorX':3,'cursorLine':1,})
 let s:expectedText = "(for [col columns]\n  \"\n  [:div.td {:style \"max-width: 500px;\"}])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 224 failed"
 endif
 
@@ -128,41 +145,47 @@ endif
 let s:result = g:ParinferLib.IndentMode("(def foo [a b]\n  ; \"my multiline\n  ; docstring.\"\nret)", {})
 let s:expectedText = "(def foo [a b])\n  ; \"my multiline\n  ; docstring.\"\nret"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 240 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def foo [a b]\n  ; \"\"\\"\nret)", {})
-let s:expectedText = "(def foo [a b])\n  ; \"\"\\"\nret"
+let s:result = g:ParinferLib.IndentMode("(def foo [a b]\n  ; \"\"\\\"\nret)", {})
+let s:expectedText = "(def foo [a b])\n  ; \"\"\\\"\nret"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 256 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(defn foo [a b\n  \[\n  ret", {})
-let s:expectedText = "(defn foo [a b]\n  \[\n  ret)"
+let s:result = g:ParinferLib.IndentMode("(defn foo [a b\n  \\[\n  ret", {})
+let s:expectedText = "(defn foo [a b]\n  \\[\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 272 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def foo \;", {})
-let s:expectedText = "(def foo \;)"
+let s:result = g:ParinferLib.IndentMode("(def foo \\;", {})
+let s:expectedText = "(def foo \\;)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 287 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def foo \,\n(def bar \ ", {})
-let s:expectedText = "(def foo \,)\n(def bar \ )"
+let s:result = g:ParinferLib.IndentMode("(def foo \\,\n(def bar \\ ", {})
+let s:expectedText = "(def foo \\,)\n(def bar \\ )"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 297 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(foo [a b\\n  c)", {})
-let s:expectedText = "(foo [a b\\n  c)"
+let s:result = g:ParinferLib.IndentMode("(foo [a b\\\n  c)", {})
+let s:expectedText = "(foo [a b\\\n  c)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 309 failed"
 endif
 
@@ -170,6 +193,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(def foo ;)", {})
 let s:expectedText = "(def foo) ;)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 324 failed"
 endif
 
@@ -177,6 +201,7 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [a 1\n      b 2\n      c {:foo 1\n         ;; :bar 2}]\n  ret)", {})
 let s:expectedText = "(let [a 1\n      b 2\n      c {:foo 1}]\n         ;; :bar 2}]\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 335 failed"
 endif
 
@@ -184,20 +209,23 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [a 1 ;; a comment\n  ret)", {})
 let s:expectedText = "(let [a 1] ;; a comment\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 353 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("; hello \n world", {})
-let s:expectedText = "; hello \n world"
+let s:result = g:ParinferLib.IndentMode("; hello \\n world", {})
+let s:expectedText = "; hello \\n world"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 365 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def b )", {})
+let s:result = g:ParinferLib.IndentMode("(def b )", {'cursorX':7,'cursorLine':0,})
 let s:expectedText = "(def b )"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 382 failed"
 endif
 
@@ -205,13 +233,15 @@ endif
 let s:result = g:ParinferLib.IndentMode("(def b )", {})
 let s:expectedText = "(def b)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 392 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def b [[c d] ])", {})
+let s:result = g:ParinferLib.IndentMode("(def b [[c d] ])", {'cursorX':14,'cursorLine':0,})
 let s:expectedText = "(def b [[c d] ])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 402 failed"
 endif
 
@@ -219,13 +249,15 @@ endif
 let s:result = g:ParinferLib.IndentMode("(def b [[c d] ])", {})
 let s:expectedText = "(def b [[c d]])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 412 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(def b [[c d] ])", {})
+let s:result = g:ParinferLib.IndentMode("(def b [[c d] ])", {'cursorX':5,'cursorLine':0,})
 let s:expectedText = "(def b [[c d]])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 423 failed"
 endif
 
@@ -233,13 +265,15 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [a 1])\n  ret)", {})
 let s:expectedText = "(let [a 1]\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 437 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(let [a 1])\n  ret)", {})
+let s:result = g:ParinferLib.IndentMode("(let [a 1])\n  ret)", {'cursorX':11,'cursorLine':0,})
 let s:expectedText = "(let [a 1])\n  ret"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 449 failed"
 endif
 
@@ -247,27 +281,31 @@ endif
 let s:result = g:ParinferLib.IndentMode("(let [a 1]) 2\n  ret", {})
 let s:expectedText = "(let [a 1]) 2\n  ret"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 462 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(let [a 1])\n  ret)", {})
+let s:result = g:ParinferLib.IndentMode("(let [a 1])\n  ret)", {'cursorX':10,'cursorLine':0,})
 let s:expectedText = "(let [a 1]\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 475 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(let [a 1]) ;\n  ret", {})
+let s:result = g:ParinferLib.IndentMode("(let [a 1]) ;\n  ret", {'cursorX':13,'cursorLine':0,})
 let s:expectedText = "(let [a 1] ;\n  ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 487 failed"
 endif
 
 
-let s:result = g:ParinferLib.IndentMode("(let [a 1\n      ])", {})
+let s:result = g:ParinferLib.IndentMode("(let [a 1\n      ])", {'cursorX':6,'cursorLine':1,})
 let s:expectedText = "(let [a 1])\n      "
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Indent Mode Test 501 failed"
 endif
 
@@ -279,6 +317,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(let [foo 1]\nfoo)", {})
 let s:expectedText = "(let [foo 1]\n foo)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 4 failed"
 endif
 
@@ -286,6 +325,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(let [foo 1]\n      foo)", {})
 let s:expectedText = "(let [foo 1]\n     foo)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 16 failed"
 endif
 
@@ -293,6 +333,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(let [foo {:a 1}]\n           foo)", {})
 let s:expectedText = "(let [foo {:a 1}]\n     foo)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 28 failed"
 endif
 
@@ -300,6 +341,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(let [foo [1 2 3]]\n      (-> foo\n          (map inc)))", {})
 let s:expectedText = "(let [foo [1 2 3]]\n     (-> foo\n         (map inc)))"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 40 failed"
 endif
 
@@ -307,6 +349,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(let [foo 1\n      bar 2\n\n      ] (+ foo bar\n  )\n)", {})
 let s:expectedText = "(let [foo 1\n      bar 2]\n\n     (+ foo bar))\n  \n"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 56 failed"
 endif
 
@@ -314,6 +357,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(def x [1 2 3 4\n         5 6 7 8])", {})
 let s:expectedText = "(def x [1 2 3 4\n         5 6 7 8])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 76 failed"
 endif
 
@@ -321,6 +365,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("  (assoc x\n:foo 1\n     :bar 2)", {})
 let s:expectedText = "  (assoc x\n   :foo 1\n     :bar 2)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 88 failed"
 endif
 
@@ -328,27 +373,31 @@ endif
 let s:result = g:ParinferLib.ParenMode("(let [foo 1]\n      foo)\n\n(let [foo 1]\nfoo)", {})
 let s:expectedText = "(let [foo 1]\n     foo)\n\n(let [foo 1]\n foo)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 102 failed"
 endif
 
 
-let s:result = g:ParinferLib.ParenMode("; hello \n world", {})
-let s:expectedText = "; hello \n world"
+let s:result = g:ParinferLib.ParenMode("; hello \\n world", {})
+let s:expectedText = "; hello \\n world"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 120 failed"
 endif
 
 
-let s:result = g:ParinferLib.ParenMode("(def foo \,)\n(def bar \ )", {})
-let s:expectedText = "(def foo \,)\n(def bar \ )"
+let s:result = g:ParinferLib.ParenMode("(def foo \\,)\n(def bar \\ )", {})
+let s:expectedText = "(def foo \\,)\n(def bar \\ )"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 130 failed"
 endif
 
 
-let s:result = g:ParinferLib.ParenMode("(foo [a b\n])", {})
+let s:result = g:ParinferLib.ParenMode("(foo [a b\n])", {'cursorX':0,'cursorLine':1,})
 let s:expectedText = "(foo [a b\n      ])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 142 failed"
 endif
 
@@ -356,6 +405,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(def foo\n,bar)", {})
 let s:expectedText = "(def foo\n ,bar)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 156 failed"
 endif
 
@@ -363,6 +413,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(def foo [a b]\n  ; \"my string\nret)", {})
 let s:expectedText = "(def foo [a b]\n  ; \"my string\nret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 168 failed"
 endif
 
@@ -370,27 +421,31 @@ endif
 let s:result = g:ParinferLib.ParenMode("(def foo [a b]\n  ; \"my multiline\n  ; docstring.\"\nret)", {})
 let s:expectedText = "(def foo [a b]\n  ; \"my multiline\n  ; docstring.\"\n ret)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 182 failed"
 endif
 
 
-let s:result = g:ParinferLib.ParenMode("(foo [a b]\\nc)", {})
-let s:expectedText = "(foo [a b]\\nc)"
+let s:result = g:ParinferLib.ParenMode("(foo [a b]\\\nc)", {})
+let s:expectedText = "(foo [a b]\\\nc)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 199 failed"
 endif
 
 
-let s:result = g:ParinferLib.ParenMode("(foo )", {})
+let s:result = g:ParinferLib.ParenMode("(foo )", {'cursorX':5,'cursorLine':0,})
 let s:expectedText = "(foo )"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 212 failed"
 endif
 
 
-let s:result = g:ParinferLib.ParenMode("(foo [1 2 3 ] )", {})
+let s:result = g:ParinferLib.ParenMode("(foo [1 2 3 ] )", {'cursorX':12,'cursorLine':0,})
 let s:expectedText = "(foo [1 2 3 ] )"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 220 failed"
 endif
 
@@ -398,6 +453,7 @@ endif
 let s:result = g:ParinferLib.ParenMode("(foo )", {})
 let s:expectedText = "(foo)"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 230 failed"
 endif
 
@@ -405,7 +461,15 @@ endif
 let s:result = g:ParinferLib.ParenMode("(foo [1 2 3 ] )", {})
 let s:expectedText = "(foo [1 2 3])"
 if s:result.text !=# s:expectedText
+    let s:anyErrorsFound = 1
     echom "Paren Mode Test 238 failed"
 endif
 
+
+""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"" Show success if there were no failures
+""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if ! s:anyErrorsFound
+    echom 'All tests passed!'
+endif
 

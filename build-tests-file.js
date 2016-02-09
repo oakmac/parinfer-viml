@@ -17,7 +17,8 @@ var output =
   '""' + '\n' +
   warningLine +
   warningLine + '\n' +
-  'source parinfer.vim' + '\n\n' +
+  'source parinfer.vim' + '\n' +
+  'let s:anyErrorsFound = 0' + '\n\n' +
   squigglyLine +
   '"" Indent Mode Tests' + '\n' +
   squigglyLine + '\n';
@@ -33,6 +34,13 @@ output += squigglyLine +
 parenModeTests.forEach(function(t) {
   output += writeTestCase(t, 'paren') + '\n\n';
 })
+
+output += squigglyLine +
+  '"" Show success if there were no failures' + '\n' +
+  squigglyLine +
+  'if ! s:anyErrorsFound' + '\n' +
+  "    echom 'All tests passed!'" + '\n' +
+  'endif' + '\n\n';
 
 fs.writeFileSync('tests.vim', output, {encoding: 'utf8'});
 
@@ -57,20 +65,33 @@ function writeTestCase(test, mode) {
   }
 
   var testId = test.in.fileLineNo;
-  var inText = test.in.lines.join('\\n').replace(/'/g, "\\'");
-  var expectedText = test.out.lines.join('\\n').replace(/'/g, "\\'");
+  var inText = test.in.lines.join('\n');
+  var expectedText = test.out.lines.join('\n');
+  var options = buildOptions(test.in.cursor);
 
   var c = '';
-  c += 'let s:result = ' + vimlFn + '("' + escapeVimlString(inText) + '", {})' + '\n';
-  c += 'let s:expectedText = "' + escapeVimlString(expectedText) + '"' + '\n';
+  c += 'let s:result = ' + vimlFn + '(' + escapeVimlString(inText) + ', ' + options + ')' + '\n';
+  c += 'let s:expectedText = ' + escapeVimlString(expectedText) + '' + '\n';
   c += 'if s:result.text !=# s:expectedText' + '\n';
+  c += '    let s:anyErrorsFound = 1' + '\n';
   c += '    echom "' + modeStr + ' Test ' + testId + ' failed"' + '\n';
   c += 'endif' + '\n';
 
   return c;
 }
 
+function buildOptions(opts) {
+  var optionsStr = '{';
+  if (opts) {
+    if (opts.hasOwnProperty('cursorX'))    { optionsStr += "'cursorX':" + opts.cursorX + ','; }
+    if (opts.hasOwnProperty('cursorLine')) { optionsStr += "'cursorLine':" + opts.cursorLine + ','; }
+    if (opts.hasOwnProperty('cursorDx'))   { optionsStr += "'cursorDx':" + opts.cursorDx + ','; }
+  }
+  optionsStr += '}';
+
+  return optionsStr
+}
+
 function escapeVimlString(s) {
-  s = s.replace(/\"/g, '\\"');
-  return s;
+  return JSON.stringify(s);
 }

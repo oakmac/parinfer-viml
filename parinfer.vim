@@ -26,15 +26,13 @@ let s:NEWLINE = "\n"
 let s:SEMICOLON = ';'
 let s:TAB = "\t"
 
-let s:PARENS = {
-  \ '(': ')',
-  \ '{': '}',
-  \ '[': ']',
-  \ ')': '(',
-  \ '}': '{',
-  \ ']': '[',
-  \ }
-
+let s:PARENS = {}
+let s:PARENS['('] = ')'
+let s:PARENS['{'] = '}'
+let s:PARENS['['] = ']'
+let s:PARENS[')'] = '('
+let s:PARENS['}'] = '{'
+let s:PARENS[']'] = '['
 
 function! s:IsOpenParen(ch)
     return a:ch ==# '(' || a:ch ==# '{' || a:ch ==# '['
@@ -69,9 +67,9 @@ function! s:CreateInitialResult(text, mode, options)
     let l:result.parenTrailEndX = s:SENTINEL_NULL
     let l:result.parenTrailOpeners = []
 
-    let l:result.cursorX = s:SENTINEL_NULL
-    let l:result.cursorLine = s:SENTINEL_NULL
-    let l:result.cursorDx = s:SENTINEL_NULL
+    let l:result.cursorX = get(a:options, 'cursorX', s:SENTINEL_NULL)
+    let l:result.cursorLine = get(a:options, 'cursorLine', s:SENTINEL_NULL)
+    let l:result.cursorDx = get(a:options, 'cursorDx', s:SENTINEL_NULL)
 
     let l:result.isInCode = 1
     let l:result.isEscaping = 0
@@ -116,6 +114,7 @@ endfunction
 
 function! s:CreateError(result, errorName, lineNo, x)
     "" TODO: write me
+    return 'PARINFER_ERROR'
 endfunction
 
 
@@ -340,8 +339,7 @@ function! s:AfterBackslash(result)
 
     if a:result.ch ==# s:NEWLINE
         if a:result.isInCode
-            "" TODO: figure out throw here
-            "" throw error(result, ERROR_EOL_BACKSLASH, result.lineNo, result.x - 1);
+            throw s:CreateError(a:result, s:ERROR_EOL_BACKSLASH, a:result.lineNo, a:result.x - 1)
         endif
         call s:OnNewline(a:result)
     endif
@@ -581,8 +579,7 @@ function! s:OnProperIndent(result)
     let a:result.trackingIndent = 0
 
     if a:result.quoteDanger
-        "" TODO: figure out throw
-        "" throw error(result, ERROR_QUOTE_DANGER, SENTINEL_NULL, SENTINEL_NULL);
+        throw s:CreateError(a:result, s:ERROR_QUOTE_DANGER, s:SENTINEL_NULL, s:SENTINEL_NULL)
     endif
 
     if a:result.mode ==# s:INDENT_MODE
@@ -675,20 +672,17 @@ endfunction
 
 function! s:FinalizeResult(result)
     if a:result.quoteDanger
-        "" TODO: figure out throw here
-        "" throw error(result, ERROR_QUOTE_DANGER, SENTINEL_NULL, SENTINEL_NULL)
+        throw s:CreateError(a:result, s:ERROR_QUOTE_DANGER, s:SENTINEL_NULL, s:SENTINEL_NULL)
     endif
 
     if a:result.isInStr
-        "" TODO: figure out throw here
-        "" throw error(result, ERROR_UNCLOSED_QUOTE, SENTINEL_NULL, SENTINEL_NULL)
+        throw s:CreateError(a:result, s:ERROR_UNCLOSED_QUOTE, s:SENTINEL_NULL, s:SENTINEL_NULL)
     endif
 
     if len(a:result.parenStack) != 0
         if a:result.mode ==# s:PAREN_MODE
             let l:opener = s:Peek(a:result.parenStack)
-            "" TODO: figure out throw here
-            "" throw error(result, ERROR_UNCLOSED_PAREN, opener.lineNo, opener.x);
+            throw s:CreateError(a:result, s:ERROR_UNCLOSED_PAREN, l:opener.lineNo, l:opener.x)
         elseif a:result.mode ==# s:INDENT_MODE
             call s:CorrectParenTrail(a:result, 0)
         endif
@@ -706,14 +700,16 @@ endfunction
 function! s:ProcessText(text, mode, options)
     let l:result = s:CreateInitialResult(a:text, a:mode, a:options)
 
-    "" TODO: figure out try here
-    let l:i = 0
-    while l:i < len(l:result.origLines)
-        call s:ProcessLine(l:result, get(l:result.origLines, l:i))
-        let l:i = l:i + 1
-    endwhile
-    call s:FinalizeResult(l:result)
-    "" TODO: catch here
+    try
+        let l:i = 0
+        while l:i < len(l:result.origLines)
+            call s:ProcessLine(l:result, get(l:result.origLines, l:i))
+            let l:i = l:i + 1
+        endwhile
+        call s:FinalizeResult(l:result)
+    catch /PARINFER_ERROR/
+        call s:ProcessError(l:result, 'foo')
+    endtry
 
     return l:result
 endfunction
