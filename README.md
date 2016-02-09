@@ -20,11 +20,22 @@ improvement in this implementation. PR's welcome :)
 
 ## Usage
 
-TODO: write this
+TODO: write this section
 
 ## Run Tests
 
-TODO: write this
+Install [node.js]
+
+```sh
+# write the tests.vim file
+node build-tests-file.js
+
+# open vim
+vim
+
+# inside of vim, type ":source tests.vim"
+# the tests will run and display errors or a success message if they all pass
+```
 
 ## License
 
@@ -36,4 +47,5 @@ TODO: write this
 [tests]:tests/
 [main Parinfer repo]:https://github.com/shaunlebron/parinfer/tree/master/lib/test/cases
 [parinfer.js API]:https://github.com/shaunlebron/parinfer/tree/master/lib#api
+[node.js]:https://nodejs.org
 [ISC License]:LICENSE.md

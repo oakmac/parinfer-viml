@@ -111,9 +111,8 @@ function! s:CacheErrorPos(result, errorName, lineNo, x)
     let a:result.errorPosCache[a:errorName] = {'lineNo': a:lineNo, 'x': a:x,}
 endfunction
 
-
 function! s:CreateError(result, errorName, lineNo, x)
-    "" TODO: write me
+    "" TODO: figure out how to attach information to a Vimscript error
     return 'PARINFER_ERROR'
 endfunction
 
@@ -693,7 +692,9 @@ endfunction
 
 function! s:ProcessError(result, err)
     let a:result.success = 0
-    let a:result.error = a:err
+
+    "" TODO: figure out how to attach error information to a throw
+    "" let a:result.error = a:err
 endfunction
 
 
@@ -708,7 +709,7 @@ function! s:ProcessText(text, mode, options)
         endwhile
         call s:FinalizeResult(l:result)
     catch /PARINFER_ERROR/
-        call s:ProcessError(l:result, 'foo')
+        call s:ProcessError(l:result, {})
     endtry
 
     return l:result

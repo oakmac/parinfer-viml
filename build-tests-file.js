@@ -1,4 +1,4 @@
-// TODO: document the purpose of this file
+// This file builds "tests.vim", which runs the Parinfer tests using Vimscript.
 
 const fs = require('fs');
 
@@ -48,20 +48,17 @@ fs.writeFileSync('tests.vim', output, {encoding: 'utf8'});
 // TODO: check idempotence
 // TODO: check cross-mode preservation
 
-/*
-let s:testId =
-let s:result = g:ParinferLib.IndentMode()
-let s:expectedText =
-if s:result.text !=# s:expectedText
-  echom 'Test id ' . s:testId . ' failed'
-endif
-*/
 function writeTestCase(test, mode) {
-  var vimlFn = 'g:ParinferLib.IndentMode';
+  var indentModeFn = 'g:ParinferLib.IndentMode';
+  var parenModeFn = 'g:ParinferLib.ParenMode'
+
+  var vimlFn = indentModeFn;
+  var oppositeFn = parenModeFn;
   var modeStr = 'Indent Mode';
   if (mode === 'paren') {
     modeStr = 'Paren Mode';
-    vimlFn = 'g:ParinferLib.ParenMode';
+    vimlFn = parenModeFn;
+    oppositeFn = indentModeFn;
   }
 
   var testId = test.in.fileLineNo;
@@ -70,12 +67,30 @@ function writeTestCase(test, mode) {
   var options = buildOptions(test.in.cursor);
 
   var c = '';
+  c += '"" Test Id: ' + testId + '\n';
   c += 'let s:result = ' + vimlFn + '(' + escapeVimlString(inText) + ', ' + options + ')' + '\n';
   c += 'let s:expectedText = ' + escapeVimlString(expectedText) + '' + '\n';
-  c += 'if s:result.text !=# s:expectedText' + '\n';
+  c += 'let s:outText = s:result.text' + '\n';
+  c += 'let s:result2 = ' + vimlFn + '(s:outText, ' + options + ')' + '\n';
+  c += 'let s:outText2 = s:result2.text' + '\n';
+  c += 'if s:outText !=# s:expectedText' + '\n';
   c += '    let s:anyErrorsFound = 1' + '\n';
-  c += '    echom "' + modeStr + ' Test ' + testId + ' failed"' + '\n';
+  c += '    echom "' + modeStr + ' In/Out test ' + testId + ' failed"' + '\n';
   c += 'endif' + '\n';
+  c += 'if s:outText2 !=# s:expectedText' + '\n';
+  c += '    let s:anyErrorsFound = 1' + '\n';
+  c += '    echom "' + modeStr + ' Idempotence test ' + testId + ' failed"' + '\n';
+  c += 'endif' + '\n';
+
+  // test cross-mode preservation if there are no options
+  if (options === '{}') {
+    c += 'let s:result3 = ' + oppositeFn + '(s:outText, ' + options + ')' + '\n';
+    c += 'let s:outText3 = s:result3.text' + '\n';
+    c += 'if s:outText3 !=# s:expectedText' + '\n';
+    c += '    let s:anyErrorsFound = 1' + '\n';
+    c += '    echom "' + modeStr + ' Cross-mode preservation test ' + testId + ' failed"' + '\n';
+    c += 'endif' + '\n';
+  }
 
   return c;
 }
