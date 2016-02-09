@@ -1178,4 +1178,3 @@ endif
 if ! s:anyErrorsFound
     echom 'All tests passed!'
 endif
-
