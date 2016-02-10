@@ -40,7 +40,10 @@ output += squigglyLine +
   '"" Show success if there were no failures' + nl +
   squigglyLine +
   'if ! s:anyErrorsFound' + nl +
-  "    echom 'All tests passed!'" + nl +
+  '    silent !echo "All tests passed"' + nl +
+  '    q' + nl +
+  'else' + nl +
+  '    cq' + nl +
   'endif' + nl;
 
 fs.writeFileSync(testFile, output, {encoding: 'utf8'});
@@ -77,11 +80,11 @@ function writeTestCase(test, mode) {
   c += 'let s:outText2 = s:result2.text' + nl;
   c += 'if s:outText !=# s:expectedText' + nl;
   c += '    let s:anyErrorsFound = 1' + nl;
-  c += '    echom "' + modeStr + ' In/Out test ' + testId + ' failed"' + nl;
+  c += '    silent !echo "' + modeStr + ' In/Out test ' + testId + ' failed"' + nl;
   c += 'endif' + nl;
   c += 'if s:outText2 !=# s:expectedText' + nl;
   c += '    let s:anyErrorsFound = 1' + nl;
-  c += '    echom "' + modeStr + ' Idempotence test ' + testId + ' failed"' + nl;
+  c += '    silent !echo "' + modeStr + ' Idempotence test ' + testId + ' failed"' + nl;
   c += 'endif' + nl;
 
   // test cross-mode preservation if there are no options
@@ -90,7 +93,7 @@ function writeTestCase(test, mode) {
     c += 'let s:outText3 = s:result3.text' + nl;
     c += 'if s:outText3 !=# s:expectedText' + nl;
     c += '    let s:anyErrorsFound = 1' + nl;
-    c += '    echom "' + modeStr + ' Cross-mode preservation test ' + testId + ' failed"' + nl;
+    c += '    silent !echo "' + modeStr + ' Cross-mode preservation test ' + testId + ' failed"' + nl;
     c += 'endif' + nl;
   }
 

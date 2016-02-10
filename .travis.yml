@@ -1,0 +1,3 @@
+script:
+  - node build-tests-file.js
+  - vim -S tests.vim
