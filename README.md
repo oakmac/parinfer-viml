@@ -1,4 +1,4 @@
-# Parinfer in Vimscript
+# Parinfer in Vimscript [![Build Status](https://travis-ci.org/oakmac/parinfer-viml.svg?branch=master)](https://travis-ci.org/oakmac/parinfer-viml)
 
 A [Parinfer] implementation in [Vimscript].
 
@@ -30,11 +30,8 @@ Install [node.js]
 # write the tests.vim file
 node build-tests-file.js
 
-# open vim
-vim
-
-# inside of vim, type ":source tests.vim"
-# the tests will run and display errors or a success message if they all pass
+# run tests in vim
+vim -S tests.vim
 ```
 
 ## License
