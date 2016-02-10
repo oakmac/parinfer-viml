@@ -15,7 +15,7 @@ let s:anyErrorsFound = 0
 ""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 "" Test Id: 6
-let s:result = g:ParinferLib.IndentMode("(defn foo\n  [arg\n  ret", {})
+let s:result = g:ParinferLib.IndentMode("ZZZ(defn foo\n  [arg\n  ret", {})
 let s:expectedText = "(defn foo\n  [arg]\n  ret)"
 let s:outText = s:result.text
 let s:result2 = g:ParinferLib.IndentMode(s:outText, {})
