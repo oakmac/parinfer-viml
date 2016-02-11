@@ -1177,7 +1177,7 @@ endif
 ""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if ! s:anyErrorsFound
     silent !echo "All tests passed"
-    q
+    quit
 else
-    cq
+    cquit
 endif

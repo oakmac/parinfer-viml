@@ -41,9 +41,9 @@ output += squigglyLine +
   squigglyLine +
   'if ! s:anyErrorsFound' + nl +
   '    silent !echo "All tests passed"' + nl +
-  '    q' + nl +
+  '    quit' + nl +
   'else' + nl +
-  '    cq' + nl +
+  '    cquit' + nl +
   'endif' + nl;
 
 fs.writeFileSync(testFile, output, {encoding: 'utf8'});
