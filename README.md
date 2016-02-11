@@ -34,6 +34,12 @@ node build-tests-file.js
 vim -S tests.vim
 ```
 
+Run performance test:
+
+```sh
+vim -S perf.vim
+```
+
 ## License
 
 [ISC License]
