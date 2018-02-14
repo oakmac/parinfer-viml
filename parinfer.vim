@@ -137,17 +137,6 @@ function! s:RemoveWithinString(orig, startIdx, endIdx)
 endfunction
 
 
-function! s:RepeatString(text, n)
-    let l:result = ''
-    let l:i = 0
-    while l:i < a:n
-        let l:result = l:result . a:text
-        let l:i = (l:i + 1)
-    endwhile
-    return l:result
-endfunction
-
-
 ""------------------------------------------------------------------------------
 "" Line operations
 ""------------------------------------------------------------------------------
@@ -566,7 +555,7 @@ function! s:CorrectIndent(result)
     let l:newIndent = s:Clamp(l:newIndent, l:minIndent, l:maxIndent)
 
     if l:newIndent != l:origIndent
-        let l:indentStr = s:RepeatString(s:BLANK_SPACE, l:newIndent)
+        let l:indentStr = repeat(s:BLANK_SPACE, l:newIndent)
         call s:ReplaceWithinLine(a:result, a:result.lineNo, 0, l:origIndent, l:indentStr)
         let a:result.x = l:newIndent
         let a:result.indentDelta = a:result.indentDelta + l:newIndent - l:origIndent
