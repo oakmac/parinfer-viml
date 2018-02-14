@@ -645,12 +645,7 @@ function! s:ProcessLine(result, line)
         let a:result.trackingIndent = ! a:result.isInStr
     endif
 
-    let l:i = 0
-    let l:chars = a:line . s:NEWLINE
-    while l:i < strlen(l:chars)
-        call s:ProcessChar(a:result, l:chars[l:i])
-        let l:i = l:i + 1
-    endwhile
+    call map(split(a:line . s:NEWLINE, '\zs'), 's:ProcessChar(a:result, v:val)')
 
     if a:result.lineNo == a:result.parenTrailLineNo
         call s:FinishNewParenTrail(a:result)
