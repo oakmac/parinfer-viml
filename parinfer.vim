@@ -343,11 +343,10 @@ let s:DISPATCH =
   \ }
 
 function! s:OnChar(result)
-    let l:ch = a:result.ch
     if a:result.isEscaping
         call s:AfterBackslash(a:result)
     else
-        let l:Handler = get(s:DISPATCH, l:ch, 0)
+        let l:Handler = get(s:DISPATCH, a:result.ch, 0)
         if l:Handler !=# 0
           call l:Handler(a:result)
         endif
