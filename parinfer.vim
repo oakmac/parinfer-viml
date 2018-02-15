@@ -1,5 +1,5 @@
 "" parinfer.vim - a Parinfer implementation in Vimscript
-"" v0.1.0
+"" v0.2.0
 "" https://github.com/oakmac/parinfer-viml
 ""
 "" More information about Parinfer can be found here:
@@ -325,7 +325,7 @@ function! s:AfterBackslash(result)
     endif
 endfunction
 
-let s:DISPATCH = 
+let s:DISPATCH =
   \ { '(': function("<SID>OnOpenParen")
   \ , '[': function("<SID>OnOpenParen")
   \ , '{': function("<SID>OnOpenParen")
