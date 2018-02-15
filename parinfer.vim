@@ -343,13 +343,9 @@ let s:DISPATCH =
   \ }
 
 function! s:OnChar(result)
-    if a:result.isEscaping
-        call s:AfterBackslash(a:result)
-    else
-        let l:Handler = get(s:DISPATCH, a:result.ch, 0)
-        if l:Handler !=# 0
-          call l:Handler(a:result)
-        endif
+    let l:Handler = a:result.isEscaping ? function("<SID>AfterBackslash") : get(s:DISPATCH, a:result.ch, 0)
+    if l:Handler !=# 0
+      call l:Handler(a:result)
     endif
 
     let a:result.isInCode = (! a:result.isInComment) && (! a:result.isInStr)
