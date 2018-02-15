@@ -34,11 +34,6 @@ let s:PARENS[')'] = '('
 let s:PARENS['}'] = '{'
 let s:PARENS[']'] = '['
 
-function! s:IsOpenParen(ch)
-    return a:ch ==# '(' || a:ch ==# '{' || a:ch ==# '['
-endfunction
-
-
 function! s:IsCloseParen(ch)
     return a:ch ==# ')' || a:ch ==# '}' || a:ch ==# ']'
 endfunction
@@ -137,17 +132,6 @@ function! s:RemoveWithinString(orig, startIdx, endIdx)
 endfunction
 
 
-function! s:RepeatString(text, n)
-    let l:result = ''
-    let l:i = 0
-    while l:i < a:n
-        let l:result = l:result . a:text
-        let l:i = (l:i + 1)
-    endwhile
-    return l:result
-endfunction
-
-
 ""------------------------------------------------------------------------------
 "" Line operations
 ""------------------------------------------------------------------------------
@@ -224,10 +208,7 @@ endfunction
 
 
 function! s:Peek(arr)
-    if len(a:arr) == 0
-        return s:SENTINEL_NULL
-    endif
-    return a:arr[-1]
+    return get(a:arr, -1, s:SENTINEL_NULL)
 endfunction
 
 
@@ -344,27 +325,22 @@ function! s:AfterBackslash(result)
     endif
 endfunction
 
+let s:DISPATCH = 
+  \ { '(': function("<SID>OnOpenParen")
+  \ , '[': function("<SID>OnOpenParen")
+  \ , '{': function("<SID>OnOpenParen")
+  \ , ')': function("<SID>OnCloseParen")
+  \ , ']': function("<SID>OnCloseParen")
+  \ , '}': function("<SID>OnCloseParen")
+  \ , '"': function("<SID>OnQuote")
+  \ , ';': function("<SID>OnSemicolon")
+  \ , '\': function("<SID>OnBackslash")
+  \ , "\t": function("<SID>OnTab")
+  \ , "\n": function("<SID>OnNewline")
+  \ }
 
 function! s:OnChar(result)
-    let l:ch = a:result.ch
-    if a:result.isEscaping
-        call s:AfterBackslash(a:result)
-    elseif s:IsOpenParen(l:ch)
-        call s:OnOpenParen(a:result)
-    elseif s:IsCloseParen(l:ch)
-        call s:OnCloseParen(a:result)
-    elseif l:ch ==# s:DOUBLE_QUOTE
-        call s:OnQuote(a:result)
-    elseif l:ch ==# s:SEMICOLON
-        call s:OnSemicolon(a:result)
-    elseif l:ch ==# s:BACKSLASH
-        call s:OnBackslash(a:result)
-    elseif l:ch ==# s:TAB
-        call s:OnTab(a:result)
-    elseif l:ch ==# s:NEWLINE
-        call s:OnNewline(a:result)
-    endif
-
+    call call(a:result.isEscaping ? function("<SID>AfterBackslash") : get(s:DISPATCH, a:result.ch, function("type")), [a:result])
     let a:result.isInCode = (! a:result.isInComment) && (! a:result.isInStr)
 endfunction
 
@@ -566,7 +542,7 @@ function! s:CorrectIndent(result)
     let l:newIndent = s:Clamp(l:newIndent, l:minIndent, l:maxIndent)
 
     if l:newIndent != l:origIndent
-        let l:indentStr = s:RepeatString(s:BLANK_SPACE, l:newIndent)
+        let l:indentStr = repeat(s:BLANK_SPACE, l:newIndent)
         call s:ReplaceWithinLine(a:result, a:result.lineNo, 0, l:origIndent, l:indentStr)
         let a:result.x = l:newIndent
         let a:result.indentDelta = a:result.indentDelta + l:newIndent - l:origIndent
@@ -622,8 +598,6 @@ endfunction
 ""------------------------------------------------------------------------------
 
 function! s:ProcessChar(result, ch)
-    let l:origCh = a:ch
-
     let a:result.ch = a:ch
     let a:result.skipChar = 0
 
@@ -642,7 +616,7 @@ function! s:ProcessChar(result, ch)
         call s:UpdateParenTrailBounds(a:result)
     endif
 
-    call s:CommitChar(a:result, l:origCh)
+    call s:CommitChar(a:result, a:ch)
 endfunction
 
 
@@ -656,12 +630,7 @@ function! s:ProcessLine(result, line)
         let a:result.trackingIndent = ! a:result.isInStr
     endif
 
-    let l:i = 0
-    let l:chars = a:line . s:NEWLINE
-    while l:i < strlen(l:chars)
-        call s:ProcessChar(a:result, l:chars[l:i])
-        let l:i = l:i + 1
-    endwhile
+    call map(split(a:line . s:NEWLINE, '\zs'), 's:ProcessChar(a:result, v:val)')
 
     if a:result.lineNo == a:result.parenTrailLineNo
         call s:FinishNewParenTrail(a:result)
