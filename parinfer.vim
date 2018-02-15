@@ -34,11 +34,6 @@ let s:PARENS[')'] = '('
 let s:PARENS['}'] = '{'
 let s:PARENS[']'] = '['
 
-function! s:IsOpenParen(ch)
-    return a:ch ==# '(' || a:ch ==# '{' || a:ch ==# '['
-endfunction
-
-
 function! s:IsCloseParen(ch)
     return a:ch ==# ')' || a:ch ==# '}' || a:ch ==# ']'
 endfunction
@@ -333,25 +328,29 @@ function! s:AfterBackslash(result)
     endif
 endfunction
 
+let s:DISPATCH = 
+  \ { '(': function("<SID>OnOpenParen")
+  \ , '[': function("<SID>OnOpenParen")
+  \ , '{': function("<SID>OnOpenParen")
+  \ , ')': function("<SID>OnCloseParen")
+  \ , ']': function("<SID>OnCloseParen")
+  \ , '}': function("<SID>OnCloseParen")
+  \ , '"': function("<SID>OnQuote")
+  \ , ';': function("<SID>OnSemicolon")
+  \ , '\': function("<SID>OnBackslash")
+  \ , "\t": function("<SID>OnTab")
+  \ , "\n": function("<SID>OnNewline")
+  \ }
 
 function! s:OnChar(result)
     let l:ch = a:result.ch
     if a:result.isEscaping
         call s:AfterBackslash(a:result)
-    elseif s:IsOpenParen(l:ch)
-        call s:OnOpenParen(a:result)
-    elseif s:IsCloseParen(l:ch)
-        call s:OnCloseParen(a:result)
-    elseif l:ch ==# s:DOUBLE_QUOTE
-        call s:OnQuote(a:result)
-    elseif l:ch ==# s:SEMICOLON
-        call s:OnSemicolon(a:result)
-    elseif l:ch ==# s:BACKSLASH
-        call s:OnBackslash(a:result)
-    elseif l:ch ==# s:TAB
-        call s:OnTab(a:result)
-    elseif l:ch ==# s:NEWLINE
-        call s:OnNewline(a:result)
+    else
+        let l:Handler = get(s:DISPATCH, l:ch, 0)
+        if l:Handler !=# 0
+          call l:Handler(a:result)
+        endif
     endif
 
     let a:result.isInCode = (! a:result.isInComment) && (! a:result.isInStr)
