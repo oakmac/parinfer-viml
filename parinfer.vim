@@ -598,8 +598,6 @@ endfunction
 ""------------------------------------------------------------------------------
 
 function! s:ProcessChar(result, ch)
-    let l:origCh = a:ch
-
     let a:result.ch = a:ch
     let a:result.skipChar = 0
 
@@ -618,7 +616,7 @@ function! s:ProcessChar(result, ch)
         call s:UpdateParenTrailBounds(a:result)
     endif
 
-    call s:CommitChar(a:result, l:origCh)
+    call s:CommitChar(a:result, a:ch)
 endfunction
 
 
