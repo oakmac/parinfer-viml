@@ -208,10 +208,7 @@ endfunction
 
 
 function! s:Peek(arr)
-    if len(a:arr) == 0
-        return s:SENTINEL_NULL
-    endif
-    return a:arr[-1]
+    return get(a:arr, -1, s:SENTINEL_NULL)
 endfunction
 
 
