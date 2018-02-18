@@ -223,10 +223,7 @@ endfunction
 
 
 function! s:IsValidCloseParen(parenStack, ch)
-    if len(a:parenStack) == 0
-        return 0
-    endif
-    return s:Peek(a:parenStack).ch ==# s:PARENS[a:ch]
+    return len(a:parenStack) ? s:Peek(a:parenStack).ch ==# s:PARENS[a:ch] : 0
 endfunction
 
 
