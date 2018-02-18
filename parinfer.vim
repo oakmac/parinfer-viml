@@ -321,11 +321,6 @@ let s:DISPATCH =
   \ , "\"\n": function("<SID>OnNewline")
   \ }
 
-function! s:OnChar(result)
-    call call(get(s:DISPATCH, a:result.state . a:result.ch, function("type")), [a:result])
-endfunction
-
-
 ""------------------------------------------------------------------------------
 "" Cursor functions
 ""------------------------------------------------------------------------------
@@ -583,7 +578,7 @@ function! s:ProcessChar(result, ch)
     if a:result.skipChar
         let a:result.ch = ''
     else
-        call s:OnChar(a:result)
+        call call(get(s:DISPATCH, a:result.state . a:result.ch, function("type")), [a:result])
         call s:UpdateParenTrailBounds(a:result)
     endif
 
