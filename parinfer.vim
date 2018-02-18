@@ -387,13 +387,8 @@ endfunction
 
 
 function! s:UpdateParenTrailBounds(result)
-    let l:ch = a:result.ch
-
-    let l:shouldReset = a:result.isInCode &&
-                      \ l:ch =~ '[^)\]}]' &&
-                      \ (l:ch !=# s:BLANK_SPACE || (a:result.x > 0 ? a:result.lines[a:result.lineNo][a:result.x - 1] : s:SENTINEL_NULL) ==# s:BACKSLASH)
-
-    if l:shouldReset
+    if a:result.isInCode && a:result.ch =~ '[^)\]}]' &&
+     \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
         call extend(a:result, { "parenTrailLineNo": a:result.lineNo
                             \ , "parenTrailStartX": a:result.x + 1
                             \ , "parenTrailEndX": a:result.x + 1
