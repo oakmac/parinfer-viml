@@ -381,8 +381,8 @@ function! s:UpdateParenTrailBounds(result)
     if a:result.isInCode && a:result.ch =~ '[^)\]}]' &&
      \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
         call extend(a:result, { "parenTrailLineNo": a:result.lineNo
-                            \ , "parenTrailStartX": a:result.x + 1
-                            \ , "parenTrailEndX": a:result.x + 1
+                            \ , "parenTrailStartX": a:result.x + strlen(a:result.ch)
+                            \ , "parenTrailEndX": a:result.x + strlen(a:result.ch)
                             \ , "parenTrailOpeners": []
                             \ , "maxIndent": s:SENTINEL_NULL
                             \ })
@@ -599,7 +599,6 @@ function! s:ProcessChar(result, ch)
     call s:CommitChar(a:result, a:ch)
 endfunction
 
-
 function! s:ProcessLine(result, line)
     call s:InitLine(a:result, a:line)
 
@@ -610,7 +609,7 @@ function! s:ProcessLine(result, line)
         let a:result.trackingIndent = ! a:result.isInStr
     endif
 
-    call map(split(a:line . s:NEWLINE, '\zs'), 's:ProcessChar(a:result, v:val)')
+    call map(split(a:line . s:NEWLINE, '\%([ ()[\]{}";\\\t\n]\|[^ ()[\]{}";\\\t\n]\+\)\zs'), 's:ProcessChar(a:result, v:val)')
 
     if a:result.lineNo == a:result.parenTrailLineNo
         call s:FinishNewParenTrail(a:result)
