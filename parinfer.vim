@@ -391,10 +391,8 @@ function! s:UpdateParenTrailBounds(result)
     let l:ch = a:result.ch
 
     let l:shouldReset = a:result.isInCode &&
-                      \ ! s:IsCloseParen(l:ch) &&
-                      \ l:ch !=# '' &&
-                      \ (l:ch !=# s:BLANK_SPACE || l:prevCh ==# s:BACKSLASH) &&
-                      \ l:ch !=# s:DOUBLE_SPACE
+                      \ l:ch =~ '[^)\]}]' &&
+                      \ (l:ch !=# s:BLANK_SPACE || l:prevCh ==# s:BACKSLASH)
 
     if l:shouldReset
         call extend(a:result, { "parenTrailLineNo": a:result.lineNo
