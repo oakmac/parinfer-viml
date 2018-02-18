@@ -167,11 +167,10 @@ endfunction
 
 
 function! s:CommitChar(result, origCh)
-    let l:ch = a:result.ch
-    if a:origCh !=# l:ch
-        call s:ReplaceWithinLine(a:result, a:result.lineNo, a:result.x, a:result.x + strlen(a:origCh), l:ch)
+    if a:origCh !=# a:result.ch
+        call s:ReplaceWithinLine(a:result, a:result.lineNo, a:result.x, a:result.x + strlen(a:origCh), a:result.ch)
     endif
-    let a:result.x = a:result.x + strlen(l:ch)
+    let a:result.x = a:result.x + strlen(a:result.ch)
 endfunction
 
 
