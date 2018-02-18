@@ -34,6 +34,11 @@ let s:PARENS[')'] = '('
 let s:PARENS['}'] = '{'
 let s:PARENS[']'] = '['
 
+" Parser 'states'
+let s:CODE = '*'
+let s:COMMENT = ';'
+let s:STRING = '"'
+
 function! s:IsCloseParen(ch)
     return a:ch ==# ')' || a:ch ==# '}' || a:ch ==# ']'
 endfunction
@@ -67,8 +72,7 @@ function! s:CreateInitialResult(text, mode, options)
     let l:result.cursorDx = get(a:options, 'cursorDx', s:SENTINEL_NULL)
 
     let l:result.isEscaping = 0
-    let l:result.isInStr = 0
-    let l:result.isInComment = 0
+    let l:result.state = s:CODE
     let l:result.commentX = s:SENTINEL_NULL
 
     let l:result.quoteDanger = 0
@@ -227,7 +231,7 @@ endfunction
 
 
 function! s:OnOpenParen(result)
-    if !a:result.isInComment && !a:result.isInStr
+    if a:result.state ==# s:CODE
         let l:newStackEl = {}
         let l:newStackEl.lineNo = a:result.lineNo
         let l:newStackEl.x = a:result.x
@@ -253,7 +257,7 @@ endfunction
 
 
 function! s:OnCloseParen(result)
-    if !a:result.isInComment && !a:result.isInStr
+    if a:result.state ==# s:CODE
         if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
             call s:OnMatchedCloseParen(a:result)
         else
@@ -264,36 +268,39 @@ endfunction
 
 
 function! s:OnTab(result)
-    if !a:result.isInComment && !a:result.isInStr
+    if a:result.state ==# s:CODE
         let a:result.ch = s:DOUBLE_SPACE
     endif
 endfunction
 
 
 function! s:OnSemicolon(result)
-    if !a:result.isInComment && !a:result.isInStr
-        let a:result.isInComment = 1
+    if a:result.state ==# s:CODE
+        let a:result.state = s:COMMENT
         let a:result.commentX = a:result.x
     endif
 endfunction
 
 
 function! s:OnNewline(result)
-    let a:result.isInComment = 0
+    if a:result.state ==# s:COMMENT
+        let a:result.state = s:CODE
+    endif
+
     let a:result.ch = ''
 endfunction
 
 
 function! s:OnQuote(result)
-    if a:result.isInStr
-        let a:result.isInStr = 0
-    elseif a:result.isInComment
+    if a:result.state ==# s:STRING
+        let a:result.state = s:CODE
+    elseif a:result.state ==# s:COMMENT
         let a:result.quoteDanger = ! a:result.quoteDanger
         if a:result.quoteDanger
             call s:CacheErrorPos(a:result, s:ERROR_QUOTE_DANGER, a:result.lineNo, a:result.x)
         endif
     else
-        let a:result.isInStr = 1
+        let a:result.state = s:STRING
         call s:CacheErrorPos(a:result, s:ERROR_UNCLOSED_QUOTE, a:result.lineNo, a:result.x)
     endif
 endfunction
@@ -308,7 +315,7 @@ function! s:AfterBackslash(result)
     let a:result.isEscaping = 0
 
     if a:result.ch ==# s:NEWLINE
-        if !a:result.isInComment && !a:result.isInStr
+        if a:result.state ==# s:CODE
             throw s:CreateError(a:result, s:ERROR_EOL_BACKSLASH, a:result.lineNo, a:result.x - 1)
         endif
         call s:OnNewline(a:result)
@@ -376,8 +383,7 @@ endfunction
 
 
 function! s:UpdateParenTrailBounds(result)
-    if !a:result.isInComment &&
-      \ !a:result.isInStr &&
+    if a:result.state ==# s:CODE &&
       \ a:result.ch =~ '[^)\]}]' &&
       \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
         call extend(a:result, { "parenTrailLineNo": a:result.lineNo
@@ -604,9 +610,9 @@ function! s:ProcessLine(result, line)
 
     if a:result.mode ==# s:INDENT_MODE
         let a:result.trackingIndent = len(a:result.parenStack) != 0 &&
-                                    \ ! a:result.isInStr
+                                    \ a:result.state !=# s:STRING
     elseif a:result.mode ==# s:PAREN_MODE
-        let a:result.trackingIndent = ! a:result.isInStr
+        let a:result.trackingIndent = a:result.state !=# s:STRING
     endif
 
     call map(split(a:line . s:NEWLINE, '\%([ ()[\]{}";\\\t\n]\|[^ ()[\]{}";\\\t\n]\+\)\zs'), 's:ProcessChar(a:result, v:val)')
@@ -622,7 +628,7 @@ function! s:FinalizeResult(result)
         throw s:CreateError(a:result, s:ERROR_QUOTE_DANGER, s:SENTINEL_NULL, s:SENTINEL_NULL)
     endif
 
-    if a:result.isInStr
+    if a:result.state ==# s:STRING
         throw s:CreateError(a:result, s:ERROR_UNCLOSED_QUOTE, s:SENTINEL_NULL, s:SENTINEL_NULL)
     endif
 
