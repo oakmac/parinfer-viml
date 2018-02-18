@@ -122,11 +122,6 @@ function! s:InsertWithinString(orig, idx, insert)
 endfunction
 
 
-function! s:ReplaceWithinString(orig, startIdx, endIdx, replace)
-    return strpart(a:orig, 0, a:startIdx) . a:replace . strpart(a:orig, a:endIdx)
-endfunction
-
-
 function! s:RemoveWithinString(orig, startIdx, endIdx)
     return strpart(a:orig, 0, a:startIdx) . strpart(a:orig, a:endIdx)
 endfunction
@@ -138,20 +133,17 @@ endfunction
 
 
 function! s:InsertWithinLine(result, lineNo, idx, insert)
-    let l:line = a:result.lines[a:lineNo]
-    let a:result.lines[a:lineNo] = s:InsertWithinString(l:line, a:idx, a:insert)
+    let a:result.lines[a:lineNo] = s:InsertWithinString(a:result.lines[a:lineNo], a:idx, a:insert)
 endfunction
 
 
 function! s:ReplaceWithinLine(result, lineNo, startIdx, endIdx, replace)
-    let l:line = a:result.lines[a:lineNo]
-    let a:result.lines[a:lineNo] = s:ReplaceWithinString(l:line, a:startIdx, a:endIdx, a:replace)
+    let a:result.lines[a:lineNo] = strpart(a:result.lines[a:lineNo], 0, a:startIdx) . a:replace . strpart(a:result.lines[a:lineNo], a:endIdx)
 endfunction
 
 
 function! s:RemoveWithinLine(result, lineNo, startIdx, endIdx)
-    let l:line = a:result.lines[a:lineNo]
-    let a:result.lines[a:lineNo] = s:RemoveWithinString(l:line, a:startIdx, a:endIdx)
+    let a:result.lines[a:lineNo] = s:RemoveWithinString(a:result.lines[a:lineNo], a:startIdx, a:endIdx)
 endfunction
 
 
