@@ -274,26 +274,32 @@ function! s:OnSemicolon(result)
 endfunction
 
 
-function! s:OnNewline(result)
-    if a:result.state ==# s:COMMENT
-        let a:result.state = s:CODE
-    endif
-
+function! s:OnCommentNewline(result)
+    let a:result.state = s:CODE
     let a:result.ch = ''
 endfunction
 
 
-function! s:OnQuote(result)
-    if a:result.state ==# s:STRING
-        let a:result.state = s:CODE
-    elseif a:result.state ==# s:COMMENT
-        let a:result.quoteDanger = ! a:result.quoteDanger
-        if a:result.quoteDanger
-            call s:CacheErrorPos(a:result, s:ERROR_QUOTE_DANGER, a:result.lineNo, a:result.x)
-        endif
-    else
-        let a:result.state = s:STRING
-        call s:CacheErrorPos(a:result, s:ERROR_UNCLOSED_QUOTE, a:result.lineNo, a:result.x)
+function! s:OnNewline(result)
+    let a:result.ch = ''
+endfunction
+
+
+function! s:OnCodeQuote(result)
+    let a:result.state = s:STRING
+    call s:CacheErrorPos(a:result, s:ERROR_UNCLOSED_QUOTE, a:result.lineNo, a:result.x)
+endfunction
+
+
+function! s:OnStringQuote(result)
+    let a:result.state = s:CODE
+endfunction
+
+
+function! s:OnCommentQuote(result)
+    let a:result.quoteDanger = ! a:result.quoteDanger
+    if a:result.quoteDanger
+        call s:CacheErrorPos(a:result, s:ERROR_QUOTE_DANGER, a:result.lineNo, a:result.x)
     endif
 endfunction
 
@@ -321,15 +327,15 @@ let s:DISPATCH =
   \ , '*)': function("<SID>OnCloseParen")
   \ , '*]': function("<SID>OnCloseParen")
   \ , '*}': function("<SID>OnCloseParen")
-  \ , '*"': function("<SID>OnQuote")
+  \ , '*"': function("<SID>OnCodeQuote")
   \ , '*;': function("<SID>OnSemicolon")
   \ , '*\': function("<SID>OnBackslash")
   \ , "*\t": function("<SID>OnTab")
   \ , "*\n": function("<SID>OnNewline")
-  \ , ';"': function("<SID>OnQuote")
+  \ , ';"': function("<SID>OnCommentQuote")
   \ , ';\': function("<SID>OnBackslash")
-  \ , ";\n": function("<SID>OnNewline")
-  \ , '""': function("<SID>OnQuote")
+  \ , ";\n": function("<SID>OnCommentNewline")
+  \ , '""': function("<SID>OnStringQuote")
   \ , '"\': function("<SID>OnBackslash")
   \ , "\"\n": function("<SID>OnNewline")
   \ }
