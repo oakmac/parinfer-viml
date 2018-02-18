@@ -671,11 +671,7 @@ function! s:ProcessText(text, mode, options)
     let l:result = s:CreateInitialResult(a:text, a:mode, a:options)
 
     try
-        let l:i = 0
-        while l:i < len(l:result.origLines)
-            call s:ProcessLine(l:result, get(l:result.origLines, l:i))
-            let l:i = l:i + 1
-        endwhile
+        call map(copy(l:result.origLines), 's:ProcessLine(l:result, v:val)')
         call s:FinalizeResult(l:result)
     catch /PARINFER_ERROR/
         call s:ProcessError(l:result, {})
