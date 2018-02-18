@@ -275,10 +275,8 @@ endfunction
 
 
 function! s:OnSemicolon(result)
-    if a:result.state ==# s:CODE
-        let a:result.state = s:COMMENT
-        let a:result.commentX = a:result.x
-    endif
+    let a:result.state = s:COMMENT
+    let a:result.commentX = a:result.x
 endfunction
 
 
@@ -341,7 +339,6 @@ let s:DISPATCH =
   \ , ';]': function("<SID>OnCloseParen")
   \ , ';}': function("<SID>OnCloseParen")
   \ , ';"': function("<SID>OnQuote")
-  \ , ';;': function("<SID>OnSemicolon")
   \ , ';\': function("<SID>OnBackslash")
   \ , ";\t": function("<SID>OnTab")
   \ , ";\n": function("<SID>OnNewline")
@@ -352,7 +349,6 @@ let s:DISPATCH =
   \ , '"]': function("<SID>OnCloseParen")
   \ , '"}': function("<SID>OnCloseParen")
   \ , '""': function("<SID>OnQuote")
-  \ , '";': function("<SID>OnSemicolon")
   \ , '"\': function("<SID>OnBackslash")
   \ , "\"\t": function("<SID>OnTab")
   \ , "\"\n": function("<SID>OnNewline")
