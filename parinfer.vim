@@ -388,10 +388,7 @@ endfunction
 
 function! s:UpdateParenTrailBounds(result)
     let l:line = a:result.lines[a:result.lineNo]
-    let l:prevCh = s:SENTINEL_NULL
-    if a:result.x > 0
-        let l:prevCh = l:line[a:result.x - 1]
-    endif
+    let l:prevCh = a:result.x > 0 ? l:line[a:result.x - 1] : s:SENTINEL_NULL
     let l:ch = a:result.ch
 
     let l:shouldReset = a:result.isInCode &&
