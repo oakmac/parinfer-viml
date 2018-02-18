@@ -231,14 +231,12 @@ endfunction
 
 
 function! s:OnOpenParen(result)
-    if a:result.state ==# s:CODE
-        let l:newStackEl = {}
-        let l:newStackEl.lineNo = a:result.lineNo
-        let l:newStackEl.x = a:result.x
-        let l:newStackEl.ch = a:result.ch
-        let l:newStackEl.indentDelta = a:result.indentDelta
-        call add(a:result.parenStack, l:newStackEl)
-    endif
+    let l:newStackEl = {}
+    let l:newStackEl.lineNo = a:result.lineNo
+    let l:newStackEl.x = a:result.x
+    let l:newStackEl.ch = a:result.ch
+    let l:newStackEl.indentDelta = a:result.indentDelta
+    call add(a:result.parenStack, l:newStackEl)
 endfunction
 
 
@@ -257,20 +255,16 @@ endfunction
 
 
 function! s:OnCloseParen(result)
-    if a:result.state ==# s:CODE
-        if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
-            call s:OnMatchedCloseParen(a:result)
-        else
-            call s:OnUnmatchedCloseParen(a:result)
-        endif
+    if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
+        call s:OnMatchedCloseParen(a:result)
+    else
+        call s:OnUnmatchedCloseParen(a:result)
     endif
 endfunction
 
 
 function! s:OnTab(result)
-    if a:result.state ==# s:CODE
-        let a:result.ch = s:DOUBLE_SPACE
-    endif
+    let a:result.ch = s:DOUBLE_SPACE
 endfunction
 
 
@@ -332,25 +326,11 @@ let s:DISPATCH =
   \ , '*\': function("<SID>OnBackslash")
   \ , "*\t": function("<SID>OnTab")
   \ , "*\n": function("<SID>OnNewline")
-  \ , ';(': function("<SID>OnOpenParen")
-  \ , ';[': function("<SID>OnOpenParen")
-  \ , ';{': function("<SID>OnOpenParen")
-  \ , ';)': function("<SID>OnCloseParen")
-  \ , ';]': function("<SID>OnCloseParen")
-  \ , ';}': function("<SID>OnCloseParen")
   \ , ';"': function("<SID>OnQuote")
   \ , ';\': function("<SID>OnBackslash")
-  \ , ";\t": function("<SID>OnTab")
   \ , ";\n": function("<SID>OnNewline")
-  \ , '"(': function("<SID>OnOpenParen")
-  \ , '"[': function("<SID>OnOpenParen")
-  \ , '"{': function("<SID>OnOpenParen")
-  \ , '")': function("<SID>OnCloseParen")
-  \ , '"]': function("<SID>OnCloseParen")
-  \ , '"}': function("<SID>OnCloseParen")
   \ , '""': function("<SID>OnQuote")
   \ , '"\': function("<SID>OnBackslash")
-  \ , "\"\t": function("<SID>OnTab")
   \ , "\"\n": function("<SID>OnNewline")
   \ }
 
