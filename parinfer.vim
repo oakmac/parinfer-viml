@@ -228,12 +228,11 @@ endfunction
 
 
 function! s:OnOpenParen(result)
-    let l:newStackEl = {}
-    let l:newStackEl.lineNo = a:result.lineNo
-    let l:newStackEl.x = a:result.x
-    let l:newStackEl.ch = a:result.ch
-    let l:newStackEl.indentDelta = a:result.indentDelta
-    call add(a:result.parenStack, l:newStackEl)
+    call add(a:result.parenStack, { "lineNo": a:result.lineNo
+                                \ , "x": a:result.x
+                                \ , "ch": a:result.ch
+                                \ , "indentDelta": a:result.indentDelta
+                                \ })
 endfunction
 
 
