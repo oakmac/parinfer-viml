@@ -66,7 +66,6 @@ function! s:CreateInitialResult(text, mode, options)
     let l:result.cursorLine = get(a:options, 'cursorLine', s:SENTINEL_NULL)
     let l:result.cursorDx = get(a:options, 'cursorDx', s:SENTINEL_NULL)
 
-    let l:result.isInCode = 1
     let l:result.isEscaping = 0
     let l:result.isInStr = 0
     let l:result.isInComment = 0
@@ -228,7 +227,7 @@ endfunction
 
 
 function! s:OnOpenParen(result)
-    if a:result.isInCode
+    if !a:result.isInComment && !a:result.isInStr
         let l:newStackEl = {}
         let l:newStackEl.lineNo = a:result.lineNo
         let l:newStackEl.x = a:result.x
@@ -254,7 +253,7 @@ endfunction
 
 
 function! s:OnCloseParen(result)
-    if a:result.isInCode
+    if !a:result.isInComment && !a:result.isInStr
         if s:IsValidCloseParen(a:result.parenStack, a:result.ch)
             call s:OnMatchedCloseParen(a:result)
         else
@@ -265,14 +264,14 @@ endfunction
 
 
 function! s:OnTab(result)
-    if a:result.isInCode
+    if !a:result.isInComment && !a:result.isInStr
         let a:result.ch = s:DOUBLE_SPACE
     endif
 endfunction
 
 
 function! s:OnSemicolon(result)
-    if a:result.isInCode
+    if !a:result.isInComment && !a:result.isInStr
         let a:result.isInComment = 1
         let a:result.commentX = a:result.x
     endif
@@ -309,7 +308,7 @@ function! s:AfterBackslash(result)
     let a:result.isEscaping = 0
 
     if a:result.ch ==# s:NEWLINE
-        if a:result.isInCode
+        if !a:result.isInComment && !a:result.isInStr
             throw s:CreateError(a:result, s:ERROR_EOL_BACKSLASH, a:result.lineNo, a:result.x - 1)
         endif
         call s:OnNewline(a:result)
@@ -332,7 +331,6 @@ let s:DISPATCH =
 
 function! s:OnChar(result)
     call call(a:result.isEscaping ? function("<SID>AfterBackslash") : get(s:DISPATCH, a:result.ch, function("type")), [a:result])
-    let a:result.isInCode = (! a:result.isInComment) && (! a:result.isInStr)
 endfunction
 
 
@@ -378,8 +376,10 @@ endfunction
 
 
 function! s:UpdateParenTrailBounds(result)
-    if a:result.isInCode && a:result.ch =~ '[^)\]}]' &&
-     \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
+    if !a:result.isInComment &&
+      \ !a:result.isInStr &&
+      \ a:result.ch =~ '[^)\]}]' &&
+      \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
         call extend(a:result, { "parenTrailLineNo": a:result.lineNo
                             \ , "parenTrailStartX": a:result.x + strlen(a:result.ch)
                             \ , "parenTrailEndX": a:result.x + strlen(a:result.ch)
