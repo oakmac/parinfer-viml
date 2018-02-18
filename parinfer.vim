@@ -397,11 +397,12 @@ function! s:UpdateParenTrailBounds(result)
                       \ l:ch !=# s:DOUBLE_SPACE
 
     if l:shouldReset
-        let a:result.parenTrailLineNo = a:result.lineNo
-        let a:result.parenTrailStartX = a:result.x + 1
-        let a:result.parenTrailEndX = a:result.x + 1
-        let a:result.parenTrailOpeners = []
-        let a:result.maxIndent = s:SENTINEL_NULL
+        call extend(a:result, { "parenTrailLineNo": a:result.lineNo
+                            \ , "parenTrailStartX": a:result.x + 1
+                            \ , "parenTrailEndX": a:result.x + 1
+                            \ , "parenTrailOpeners": []
+                            \ , "maxIndent": s:SENTINEL_NULL
+                            \ })
     endif
 endfunction
 
