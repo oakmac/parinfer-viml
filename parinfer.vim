@@ -71,7 +71,6 @@ function! s:CreateInitialResult(text, mode, options)
     let l:result.cursorLine = get(a:options, 'cursorLine', s:SENTINEL_NULL)
     let l:result.cursorDx = get(a:options, 'cursorDx', s:SENTINEL_NULL)
 
-    let l:result.isEscaping = 0
     let l:result.state = s:CODE
     let l:result.commentX = s:SENTINEL_NULL
 
@@ -300,20 +299,8 @@ function! s:OnCommentQuote(result)
 endfunction
 
 
-function! s:OnBackslash(result)
-    let a:result.isEscaping = 1
-endfunction
-
-
-function! s:AfterBackslash(result)
-    let a:result.isEscaping = 0
-
-    if a:result.ch ==# s:NEWLINE
-        if a:result.state ==# s:CODE
-            throw s:CreateError(a:result, s:ERROR_EOL_BACKSLASH, a:result.lineNo, a:result.x - 1)
-        endif
-        call s:OnNewline(a:result)
-    endif
+function! s:OnBackslashNewline(result)
+    throw s:CreateError(a:result, s:ERROR_EOL_BACKSLASH, a:result.lineNo, a:result.x - 1)
 endfunction
 
 let s:DISPATCH =
@@ -325,19 +312,17 @@ let s:DISPATCH =
   \ , '*}': function("<SID>OnCloseParen")
   \ , '*"': function("<SID>OnCodeQuote")
   \ , '*;': function("<SID>OnSemicolon")
-  \ , '*\': function("<SID>OnBackslash")
   \ , "*\t": function("<SID>OnTab")
   \ , "*\n": function("<SID>OnNewline")
+  \ , "*\\\n": function("<SID>OnBackslashNewline")
   \ , ';"': function("<SID>OnCommentQuote")
-  \ , ';\': function("<SID>OnBackslash")
   \ , ";\n": function("<SID>OnCommentNewline")
   \ , '""': function("<SID>OnStringQuote")
-  \ , '"\': function("<SID>OnBackslash")
   \ , "\"\n": function("<SID>OnNewline")
   \ }
 
 function! s:OnChar(result)
-    call call(a:result.isEscaping ? function("<SID>AfterBackslash") : get(s:DISPATCH, a:result.state . a:result.ch, function("type")), [a:result])
+    call call(get(s:DISPATCH, a:result.state . a:result.ch, function("type")), [a:result])
 endfunction
 
 
@@ -615,7 +600,7 @@ function! s:ProcessLine(result, line)
         let a:result.trackingIndent = a:result.state !=# s:STRING
     endif
 
-    call map(split(a:line . s:NEWLINE, '\%([ ()[\]{}";\\\t\n]\|[^ ()[\]{}";\\\t\n]\+\)\zs'), 's:ProcessChar(a:result, v:val)')
+    call map(split(a:line . s:NEWLINE, '\%([ ()[\]{}";\t\n]\|\\[.\n]\|[^ ()[\]{}";\\\t\n]\+\)\zs'), 's:ProcessChar(a:result, v:val)')
 
     if a:result.lineNo == a:result.parenTrailLineNo
         call s:FinishNewParenTrail(a:result)
