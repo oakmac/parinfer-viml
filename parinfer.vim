@@ -160,14 +160,6 @@ function! s:InitLine(result, line)
 endfunction
 
 
-function! s:CommitChar(result, origCh)
-    if a:origCh !=# a:result.ch
-        call s:ReplaceWithinLine(a:result, a:result.lineNo, a:result.x, a:result.x + strlen(a:origCh), a:result.ch)
-    endif
-    let a:result.x += strlen(a:result.ch)
-endfunction
-
-
 ""------------------------------------------------------------------------------
 "" Misc Util
 ""------------------------------------------------------------------------------
@@ -578,7 +570,11 @@ function! s:ProcessChar(result, ch)
         endif
     endif
 
-    call s:CommitChar(a:result, a:ch)
+    " CommitChar
+    if a:ch !=# a:result.ch
+        call s:ReplaceWithinLine(a:result, a:result.lineNo, a:result.x, a:result.x + strlen(a:ch), a:result.ch)
+    endif
+    let a:result.x += strlen(a:result.ch)
 endfunction
 
 function! s:ProcessLine(result, line)
