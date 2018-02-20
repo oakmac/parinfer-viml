@@ -362,20 +362,6 @@ endfunction
 ""------------------------------------------------------------------------------
 
 
-function! s:UpdateParenTrailBounds(result)
-    if a:result.state ==# s:CODE &&
-      \ a:result.ch =~ '[^)\]}]' &&
-      \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
-        call extend(a:result, { "parenTrailLineNo": a:result.lineNo
-                            \ , "parenTrailStartX": a:result.x + strlen(a:result.ch)
-                            \ , "parenTrailEndX": a:result.x + strlen(a:result.ch)
-                            \ , "parenTrailOpeners": []
-                            \ , "maxIndent": s:SENTINEL_NULL
-                            \ })
-    endif
-endfunction
-
-
 function! s:ClampParenTrailToCursor(result)
     let l:startX = a:result.parenTrailStartX
     let l:endX = a:result.parenTrailEndX
@@ -579,7 +565,17 @@ function! s:ProcessChar(result, ch)
         let a:result.ch = ''
     else
         call call(get(s:DISPATCH, a:result.state . a:result.ch, function("type")), [a:result])
-        call s:UpdateParenTrailBounds(a:result)
+        " UpdateParenTrailBounds
+        if a:result.state ==# s:CODE &&
+          \ a:result.ch =~ '[^)\]}]' &&
+          \ (a:result.ch !=# ' ' || (a:result.x > 0 && a:result.lines[a:result.lineNo][a:result.x - 1] ==# '\'))
+            call extend(a:result, { "parenTrailLineNo": a:result.lineNo
+                                \ , "parenTrailStartX": a:result.x + strlen(a:result.ch)
+                                \ , "parenTrailEndX": a:result.x + strlen(a:result.ch)
+                                \ , "parenTrailOpeners": []
+                                \ , "maxIndent": s:SENTINEL_NULL
+                                \ })
+        endif
     endif
 
     call s:CommitChar(a:result, a:ch)
