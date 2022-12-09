@@ -2,6 +2,16 @@
 
 A [Parinfer] implementation in [Vimscript].
 
+## Project Status (Dec 2022)
+
+I do not plan on actively maintaining this project moving forward. [parinfer-lua]
+exists and is **much** faster than Vimscript. NeoVim users may wish to check out
+the [nvim-parinfer] plugin or [parinfer-rust].
+
+[parinfer-lua]:https://github.com/oakmac/parinfer-lua
+[nvim-parinfer]:https://github.com/gpanders/nvim-parinfer
+[parinfer-rust]:https://github.com/eraserhd/parinfer-rust
+
 ## About
 
 Having a Parinfer implementation written in Vimscript allows Parinfer to reach
